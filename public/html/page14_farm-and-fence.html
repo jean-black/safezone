@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Farm and Fence</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+</head>
+<body class="farm-setup-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">0</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page13_farm-management.html">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html" class="active">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="fence-setup">
+            <h1>How would you like to locate your farm?</h1>
+            <p style="color: #999; margin-bottom: 40px;">Choose a method to set up your farm location and create fences</p>
+
+            <div class="location-options">
+                <button class="option-btn" onclick="window.location.href='/html/page15_farm-and-fence-option1.html'">
+                    <span class="option-number">[1]</span>
+                    <span class="option-text">Use this device's GPS</span>
+                </button>
+
+                <button class="option-btn" onclick="window.location.href='/html/page16_farm-and-fence-option2.html'">
+                    <span class="option-number">[2]</span>
+                    <span class="option-text">Use GPS from one of my cow's collars</span>
+                </button>
+
+                <button class="option-btn" onclick="window.location.href='/html/page17_farm-and-fence-option3.html'">
+                    <span class="option-number">[3]</span>
+                    <span class="option-text">Select a saved farm</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <script src="../js/app.js"></script>
+</body>
+</html>

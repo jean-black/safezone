@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Farm Management</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+    <style>
+        .farm-management-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .management-section {
+            background: #1e2836;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #d32f2f;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            background: #2a3545;
+            color: white;
+        }
+
+        .data-table thead {
+            background: #1a232e;
+            color: white;
+        }
+
+        .data-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #3a4555;
+        }
+
+        .data-table td {
+            padding: 0.875rem 1rem;
+            border: 1px solid #3a4555;
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background: #2f3947;
+        }
+
+        .data-table tbody tr:nth-child(odd) {
+            background: #2a3545;
+        }
+
+        .data-table tbody tr:hover {
+            background: #3a4658;
+            cursor: default;
+        }
+
+        .btn {
+            padding: 0.65rem 1.25rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+            color: white;
+            box-shadow: 0 2px 4px rgba(211,47,47,0.3);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
+            box-shadow: 0 4px 8px rgba(211,47,47,0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+            color: white;
+            box-shadow: 0 2px 4px rgba(211,47,47,0.3);
+        }
+        .btn-success:hover {
+            background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
+            box-shadow: 0 4px 8px rgba(211,47,47,0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            box-shadow: 0 2px 4px rgba(231,76,60,0.3);
+        }
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+            box-shadow: 0 4px 8px rgba(231,76,60,0.4);
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+
+        .modal-content {
+            background-color: #1e2836;
+            color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #e0e0e0;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #3a4555;
+            border-radius: 4px;
+            background: #2a3545;
+            color: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #d32f2f;
+        }
+
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #e0e0e0;
+        }
+
+        .close:hover {
+            color: #d32f2f;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .action-cell {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body class="farm-management-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">0</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page13_farm-management.html" class="active">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="farm-management-container">
+            <div class="page-header">
+                <h1>Farm Management</h1>
+            </div>
+
+            <!-- Farms Section -->
+            <div class="management-section">
+                <div class="section-header">
+                    <h2>Farms</h2>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="openNewFarmModal()">New Farm</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="farmsTable">
+                        <thead>
+                            <tr>
+                                <th>Farm Name</th>
+                                <th>GPS Coordinates</th>
+                                <th>Number of Cows</th>
+                                <th>Timestamp</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="farmsTableBody">
+                            <tr>
+                                <td colspan="5" class="empty-state">Loading farms...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Cows Section -->
+            <div class="management-section">
+                <div class="section-header">
+                    <h2>Cows</h2>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="openNewCowModal()">New Cow</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="assignedCowsTable">
+                        <thead>
+                            <tr>
+                                <th>Cow Name</th>
+                                <th>Cow Nickname</th>
+                                <th>Farm Name</th>
+                                <th>Collar ID</th>
+                                <th>Connection State</th>
+                                <th>Registered At</th>
+                                <th>Assigned At</th>
+                                <th>Connected At</th>
+                                <th>Last Seen</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assignedCowsTableBody">
+                            <tr>
+                                <td colspan="10" class="empty-state">Loading cows...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Unassigned Cows Section -->
+            <div class="management-section" style="border-left: 4px solid #f39c12;">
+                <div class="section-header">
+                    <h2>Unassigned Cows (Not Yet Assigned to Farm)</h2>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="loadCows()">Refresh</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="unassignedCowsTable">
+                        <thead>
+                            <tr>
+                                <th>Cow Name</th>
+                                <th>Cow Nickname</th>
+                                <th>Collar ID</th>
+                                <th>Connection State</th>
+                                <th>Registered At</th>
+                                <th>Connected At</th>
+                                <th>Last Seen</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="unassignedCowsTableBody">
+                            <tr>
+                                <td colspan="8" class="empty-state">Loading cows...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Fences Section -->
+            <div class="management-section">
+                <div class="section-header">
+                    <h2>Fences</h2>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="fencesTable">
+                        <thead>
+                            <tr>
+                                <th>Fence Name</th>
+                                <th>Area Size</th>
+                                <th>Timestamp</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fencesTableBody">
+                            <tr>
+                                <td colspan="4" class="empty-state">Loading fences...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Rename Farm Modal -->
+    <div id="renameFarmModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('renameFarmModal')">&times;</span>
+            <h3>Rename Farm</h3>
+            <form onsubmit="event.preventDefault(); confirmRenameFarm();">
+                <div class="form-group">
+                    <label>New Farm Name:</label>
+                    <input type="text" id="newFarmName" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-danger" onclick="closeModal('renameFarmModal')">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Farm Modal -->
+    <div id="deleteFarmModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('deleteFarmModal')">&times;</span>
+            <h3>Delete Farm</h3>
+            <p id="deleteFarmMessage"></p>
+            <div class="form-group" id="transferFarmGroup" style="display: none;">
+                <label>Transfer cows to:</label>
+                <select id="transferFarmSelect">
+                    <option value="">Do not transfer (unassign cows)</option>
+                </select>
+            </div>
+            <button class="btn btn-danger" onclick="confirmDeleteFarm()">Delete</button>
+            <button class="btn btn-primary" onclick="closeModal('deleteFarmModal')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Rename Cow Modal -->
+    <div id="renameCowModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('renameCowModal')">&times;</span>
+            <h3>Set Cow Nickname</h3>
+            <form onsubmit="event.preventDefault(); confirmRenameCow();">
+                <div class="form-group">
+                    <label>Cow Nickname:</label>
+                    <input type="text" id="newCowNickname" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-danger" onclick="closeModal('renameCowModal')">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assign Cow Modal -->
+    <div id="assignCowModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('assignCowModal')">&times;</span>
+            <h3>Assign Cow to Farm</h3>
+            <div class="form-group">
+                <label>Select Farm:</label>
+                <select id="assignFarmSelect">
+                    <option value="">Unassign (no farm)</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="confirmAssignCow()">Assign</button>
+            <button class="btn btn-danger" onclick="closeModal('assignCowModal')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Delete Cow Modal -->
+    <div id="deleteCowModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('deleteCowModal')">&times;</span>
+            <h3>Delete Cow</h3>
+            <p id="deleteCowMessage"></p>
+            <button class="btn btn-danger" onclick="confirmDeleteCow()">Delete</button>
+            <button class="btn btn-primary" onclick="closeModal('deleteCowModal')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Rename Fence Modal -->
+    <div id="renameFenceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('renameFenceModal')">&times;</span>
+            <h3>Rename Fence</h3>
+            <form onsubmit="event.preventDefault(); confirmRenameFence();">
+                <div class="form-group">
+                    <label>New Fence Name:</label>
+                    <input type="text" id="newFenceName" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-danger" onclick="closeModal('renameFenceModal')">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Fence Modal -->
+    <div id="deleteFenceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('deleteFenceModal')">&times;</span>
+            <h3>Delete Fence</h3>
+            <p id="deleteFenceMessage"></p>
+            <button class="btn btn-danger" onclick="confirmDeleteFence()">Delete</button>
+            <button class="btn btn-primary" onclick="closeModal('deleteFenceModal')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- New Farm Modal -->
+    <div id="newFarmModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('newFarmModal')">&times;</span>
+            <h3>Create New Farm</h3>
+            <p>To create a new farm, please go to the "Farm and Fence" page where you can set up the farm location and boundaries.</p>
+            <button class="btn btn-primary" onclick="window.location.href='/html/page14_farm-and-fence.html'">Go to Farm and Fence</button>
+            <button class="btn btn-danger" onclick="closeModal('newFarmModal')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- New Cow Modal -->
+    <div id="newCowModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('newCowModal')">&times;</span>
+            <h3>Add New Cow</h3>
+            <p>New cows are automatically registered when their ESP32 collars connect to the system. Check the "New Connected Cows" section below for unassigned cows.</p>
+            <button class="btn btn-primary" onclick="refreshNewCows(); closeModal('newCowModal')">Check New Cows</button>
+            <button class="btn btn-danger" onclick="closeModal('newCowModal')">Cancel</button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <script src="../js/app.js"></script>
+    <script src="../js/farm-management.js"></script>
+</body>
+</html>

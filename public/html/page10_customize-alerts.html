@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Customize Alerts</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+</head>
+<body class="alerts-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+        
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">3</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+        
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page13_farm-management.html">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html" class="active">Customize Alerts</a>
+        </div>
+    </header>
+    
+    <main class="main-content">
+        <div class="alerts-container">
+            <h1>Customize Alerts</h1>
+            
+            <div class="alert-sections">
+                <div class="alert-section">
+                    <h3>Alarm 3 — Boundary Distance Alert</h3>
+                    <p class="section-description">Immediate email when cow is within this distance of the fence</p>
+
+                    <div class="setting-group">
+                        <label for="boundaryDistance">Distance from fence (meters):</label>
+                        <input type="number" id="boundaryDistance" name="boundaryDistance"
+                               value="1.0" min="0.1" max="10.0" step="0.1">
+                        <small>Email sent immediately when cow is this close to the fence edge (default: 1.0m)</small>
+                    </div>
+
+                    <button class="btn btn-primary" id="saveBoundaryBtn" onclick="saveBoundarySetting()">
+                        Save Boundary Setting
+                    </button>
+                </div>
+                
+                <div class="alert-section">
+                    <h3>Alarm Timing Settings</h3>
+                    <p class="section-description">Configure when each alarm triggers and how long audio plays</p>
+
+                    <div class="setting-group">
+                        <label for="deterrentTime1">Alarm 1 — Audio trigger (seconds in zone 2):</label>
+                        <input type="number" id="deterrentTime1" name="deterrentTime1"
+                               value="10" min="1" max="60">
+                        <small>Audio alarm starts after this many seconds in zone 2 (default: 10s)</small>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="buzzerDuration">Alarm 1 — Audio duration (seconds):</label>
+                        <input type="number" id="buzzerDuration" name="buzzerDuration"
+                               value="20" min="5" max="60">
+                        <small>How long the audio alarm plays (default: 20s)</small>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="deterrentTime3">Alarm 2 — Email trigger (seconds in zone 2):</label>
+                        <input type="number" id="deterrentTime3" name="deterrentTime3"
+                               value="25" min="5" max="300">
+                        <small>Email alert sent after this many seconds in zone 2 (default: 25s)</small>
+                    </div>
+
+                    <button class="btn btn-primary" id="saveDeterrentBtn" onclick="saveDeterrentSettings()">
+                        Save Alarm Settings
+                    </button>
+                </div>
+                
+                <div class="alert-section">
+                    <h3>Exo Training System</h3>
+                    <p class="section-description">Configure the cow deterrent training system (LED stand-ins for collar hardware)</p>
+
+                    <div class="setting-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="exo_s1_en" checked>
+                            <span class="checkmark"></span>
+                            <span class="label-text">Section 1 — LED1 (Electricity): activate at line1 crossing</span>
+                        </label>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="exo_s2_en" checked>
+                            <span class="checkmark"></span>
+                            <span class="label-text">Section 2 — LED2 &amp; LED3 (Intermittent electricity): blink in zone2</span>
+                        </label>
+                        <label for="exo_s2_par" style="margin-top:8px;">Blink duration in zone2 (seconds):</label>
+                        <input type="number" id="exo_s2_par" min="1" max="120" value="15" style="width:80px;">
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="exo_s3_en" checked>
+                            <span class="checkmark"></span>
+                            <span class="label-text">Section 3 — LED4 (Speaker): activates after 10s in zone2 or zone3, then stays on for this duration</span>
+                        </label>
+                        <label for="exo_s3_par" style="margin-top:8px;">Active duration (seconds):</label>
+                        <input type="number" id="exo_s3_par" min="1" max="120" value="25" style="width:80px;">
+                        <small>Speaker stays on for this many seconds after activating (default: 25s)</small>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="exo_s4_en" checked>
+                            <span class="checkmark"></span>
+                            <span class="label-text">Section 4 — LED5 (Vibrator): activates instantly when cow enters zone3, stays on for this duration</span>
+                        </label>
+                        <label for="exo_s4_par" style="margin-top:8px;">Active duration in zone3 (seconds):</label>
+                        <input type="number" id="exo_s4_par" min="1" max="120" value="15" style="width:80px;">
+                        <small>Vibrator stays on for this many seconds after zone3 entry (default: 15s)</small>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="exo_s5_en" checked>
+                            <span class="checkmark"></span>
+                            <span class="label-text">Section 5 — LED6, LED7, LED8 (Night LEDs): blink indefinitely while outside zone1</span>
+                        </label>
+                    </div>
+
+                    <button class="btn btn-success" id="saveExoBtn" onclick="saveExoSettings()">
+                        Save Exo Settings
+                    </button>
+                </div>
+
+                <div class="alert-section">
+                    <h3>Gmail Alert Settings</h3>
+                    <p class="section-description">Configure email notification settings</p>
+
+                    <div class="setting-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="enableGmailAlerts" checked>
+                            <span class="checkmark"></span>
+                            <span class="label-text">Enable Gmail Alerts</span>
+                        </label>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="dailyReports" checked>
+                            <span class="checkmark"></span>
+                            <span class="label-text">Send Daily Reports (24MPF)</span>
+                        </label>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="offlineAlert" checked>
+                            <span class="checkmark"></span>
+                            <span class="label-text">ESP32 Collar Offline Alert — receive a notification when a collar goes offline</span>
+                        </label>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="alertFrequency">Alert Frequency:</label>
+                        <select id="alertFrequency" name="alertFrequency">
+                            <option value="immediate">Immediate</option>
+                            <option value="5min">Every 5 minutes</option>
+                            <option value="15min">Every 15 minutes</option>
+                            <option value="30min">Every 30 minutes</option>
+                            <option value="1hour">Every hour</option>
+                        </select>
+                        <small>How often to send email alerts for the same cow</small>
+                    </div>
+                    
+                    <button class="btn btn-success" id="saveGmailBtn" onclick="saveGmailSettings()">
+                        Save Gmail Settings
+                    </button>
+                </div>
+                
+            </div>
+            
+            <div class="default-settings-info">
+                <h3>System Alarm Reference</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>Alarm 1 trigger:</strong> 10 seconds in zone 2 → Audio alarm
+                    </div>
+                    <div class="info-item">
+                        <strong>Alarm 1 audio duration:</strong> 20 seconds
+                    </div>
+                    <div class="info-item">
+                        <strong>Alarm 2 trigger:</strong> 25 seconds in zone 2 → Email alert
+                    </div>
+                    <div class="info-item">
+                        <strong>Alarm 3 trigger:</strong> Within 1.0m of fence → Immediate email
+                    </div>
+                </div>
+                <p><em>Settings are saved to the server and pushed to all your ESP32 devices automatically.</em></p>
+                <button class="btn btn-warning" id="resetDefaultsBtn" onclick="resetToDefaults()" style="margin-top:12px">
+                    Reset to Defaults
+                </button>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+    
+    <script src="../js/app.js"></script>
+    <script>
+    (function () {
+        const PREFS_URL = '/api/auth/preferences';
+        const authHeaders = () => ({
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        });
+
+        let _cachedPrefs = {};
+
+        function collectAlarmPrefs() {
+            const chkVal = (id, def) => { const el = document.getElementById(id); return el ? el.checked : def; };
+            return {
+                alarm1TriggerTime:          parseInt(document.getElementById('deterrentTime1')?.value)      || null,
+                alarm1AudioDuration:        parseInt(document.getElementById('buzzerDuration')?.value)      || null,
+                alarm2MomentOfActivation:   parseInt(document.getElementById('deterrentTime3')?.value)      || null,
+                alarm3DistanceOfActivation: parseFloat(document.getElementById('boundaryDistance')?.value)  || null,
+                gmailAlertsEnabled:  document.getElementById('enableGmailAlerts')?.checked ?? true,
+                dailyReports:        document.getElementById('dailyReports')?.checked       ?? true,
+                alertFrequency:      document.getElementById('alertFrequency')?.value        || 'immediate',
+                offlineAlertEnabled: document.getElementById('offlineAlert')?.checked       ?? true,
+                // Exo system
+                exo_section1_led1_enabled:          chkVal('exo_s1_en', true),
+                exo_section2_led2led3_enabled:      chkVal('exo_s2_en', true),
+                exo_section2_led2led3_parameter:    parseInt(document.getElementById('exo_s2_par')?.value) || 15,
+                exo_section3_led4_enabled:          chkVal('exo_s3_en', true),
+                exo_section3_led4_parameter:        parseInt(document.getElementById('exo_s3_par')?.value) || 25,
+                exo_section4_led5_enabled:          chkVal('exo_s4_en', true),
+                exo_section4_led5_parameter:        parseInt(document.getElementById('exo_s4_par')?.value) || 15,
+                exo_section5_led6led7led8_enabled:  chkVal('exo_s5_en', true),
+            };
+        }
+
+        function restoreAlarmPrefs(prefs) {
+            const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+            const chk = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.checked = val; };
+            set('deterrentTime1',    prefs.alarm1TriggerTime);
+            set('buzzerDuration',    prefs.alarm1AudioDuration);
+            set('deterrentTime3',    prefs.alarm2MomentOfActivation);
+            set('boundaryDistance',  prefs.alarm3DistanceOfActivation);
+            chk('enableGmailAlerts', prefs.gmailAlertsEnabled);
+            chk('dailyReports',      prefs.dailyReports);
+            set('alertFrequency',    prefs.alertFrequency);
+            chk('offlineAlert',      prefs.offlineAlertEnabled ?? true);
+            // Exo system
+            chk('exo_s1_en', prefs.exo_section1_led1_enabled         ?? true);
+            chk('exo_s2_en', prefs.exo_section2_led2led3_enabled      ?? true);
+            set('exo_s2_par', prefs.exo_section2_led2led3_parameter   ?? 15);
+            chk('exo_s3_en', prefs.exo_section3_led4_enabled          ?? true);
+            set('exo_s3_par', prefs.exo_section3_led4_parameter       ?? 25);
+            chk('exo_s4_en', prefs.exo_section4_led5_enabled          ?? true);
+            set('exo_s4_par', prefs.exo_section4_led5_parameter       ?? 15);
+            chk('exo_s5_en', prefs.exo_section5_led6led7led8_enabled  ?? true);
+        }
+
+        async function saveAlarmPrefs() {
+            const merged = { ..._cachedPrefs, ...collectAlarmPrefs() };
+            _cachedPrefs = merged;
+            try {
+                await fetch(PREFS_URL, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ prefs: merged }) });
+            } catch (e) {}
+        }
+
+        function flashBtn(id, doneLabel, defaultLabel) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            btn.textContent = doneLabel;
+            setTimeout(() => { btn.textContent = defaultLabel; }, 2000);
+        }
+
+        window.saveBoundarySetting = async function () {
+            await saveAlarmPrefs();
+            flashBtn('saveBoundaryBtn', 'Saved!', 'Save Boundary Setting');
+        };
+
+        window.saveDeterrentSettings = async function () {
+            await saveAlarmPrefs();
+            flashBtn('saveDeterrentBtn', 'Saved!', 'Save Deterrent Settings');
+        };
+
+        window.saveExoSettings = async function () {
+            await saveAlarmPrefs();
+            flashBtn('saveExoBtn', 'Saved!', 'Save Exo Settings');
+        };
+
+        window.saveGmailSettings = async function () {
+            await saveAlarmPrefs();
+            flashBtn('saveGmailBtn', 'Saved!', 'Save Gmail Settings');
+        };
+
+        window.resetToDefaults = async function () {
+            const btn = document.getElementById('resetDefaultsBtn');
+            if (btn) btn.disabled = true;
+            try {
+                const r = await fetch('/api/alarms/reset', { method: 'POST', headers: authHeaders() });
+                if (!r.ok) throw new Error('Reset failed');
+                const { defaults } = await r.json();
+                // Restore inputs to defaults
+                restoreAlarmPrefs({
+                    alarm1TriggerTime:          defaults.alarm1TriggerTime,
+                    alarm1AudioDuration:        defaults.alarm1AudioDuration,
+                    alarm2MomentOfActivation:   defaults.alarm2MomentOfActivation,
+                    alarm3DistanceOfActivation: defaults.alarm3DistanceOfActivation,
+                });
+                _cachedPrefs = { ..._cachedPrefs, ...collectAlarmPrefs() };
+                if (btn) { btn.textContent = 'Reset Done!'; setTimeout(() => { btn.textContent = 'Reset to Defaults'; btn.disabled = false; }, 2000); }
+            } catch (e) {
+                alert('Reset failed: ' + e.message);
+                if (btn) { btn.textContent = 'Reset to Defaults'; btn.disabled = false; }
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', async function () {
+            try {
+                const r = await fetch(PREFS_URL, { headers: authHeaders() });
+                if (!r.ok) return;
+                const { prefs } = await r.json();
+                _cachedPrefs = prefs || {};
+                restoreAlarmPrefs(_cachedPrefs);
+            } catch (e) {}
+        });
+    })();
+    </script>
+</body>
+</html>

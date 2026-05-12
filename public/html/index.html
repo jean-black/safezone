@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Login</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+</head>
+<body class="login-page">
+    <div class="container">
+        <div class="login-container">
+            <div class="logo-section">
+                <img src="/images/safezone icone.png" alt="SafeZone Logo" class="app-logo red-fill">
+                <h1 class="app-title">SafeZone</h1>
+            </div>
+            
+            <div class="login-form">
+                <h2>Login to your account</h2>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email address</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    
+                    <div class="error-message" id="errorMessage"></div>
+                    <div class="success-message" id="successMessage"></div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Log-in</button>
+                        <button type="button" class="btn btn-secondary" id="signupBtn">Sign-up</button>
+                    </div>
+
+                    <div class="forgot-password-link">
+                        <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal" id="signupModal">
+        <div class="modal-content">
+            <span class="close" id="closeSignup">&times;</span>
+            <h2>Create Account</h2>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="signupEmail">Email Address</label>
+                    <input type="email" id="signupEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password (min 8 characters)</label>
+                    <input type="password" id="signupPassword" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label for="signupPasswordConfirm">Confirm Password</label>
+                    <input type="password" id="signupPasswordConfirm" required>
+                </div>
+                <div class="error-message" id="signupError"></div>
+                <button type="submit" class="btn btn-primary">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Email Confirmation Modal -->
+    <div class="modal" id="confirmEmailModal">
+        <div class="modal-content">
+            <span class="close" id="closeConfirmEmail">&times;</span>
+            <h2>Confirm Your Email</h2>
+            <p>Please enter the 4-digit confirmation code sent to your email.</p>
+            <form id="confirmEmailForm">
+                <div class="form-group">
+                    <label for="confirmationCode">Confirmation Code</label>
+                    <input type="text" id="confirmationCode" required maxlength="4" pattern="[0-9]{4}">
+                </div>
+                <div class="error-message" id="confirmError"></div>
+                <button type="submit" class="btn btn-primary">Confirm Email</button>
+                <button type="button" class="btn btn-secondary" id="resendCodeBtn">Resend Code</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Password Recovery Modal -->
+    <div class="modal" id="recoveryModal">
+        <div class="modal-content">
+            <span class="close" id="closeRecovery">&times;</span>
+            <h2>Account Recovery</h2>
+
+            <!-- Step 1: Request recovery code -->
+            <div id="requestRecoveryStep">
+                <p>Enter your email address to receive a recovery code.</p>
+                <form id="requestRecoveryForm">
+                    <div class="form-group">
+                        <label for="recoveryEmail">Email Address</label>
+                        <input type="email" id="recoveryEmail" required placeholder="your@email.com">
+                    </div>
+                    <div class="error-message" id="requestRecoveryError"></div>
+                    <button type="submit" class="btn btn-primary">Send Recovery Code</button>
+                </form>
+            </div>
+
+            <!-- Step 2: Enter recovery code -->
+            <div id="verifyRecoveryStep" style="display: none;">
+                <p>Enter the 4-digit recovery code sent to your email.</p>
+                <p id="recoveryEmailDisplay" style="color: #dc2626; font-weight: 500; margin-bottom: 1rem;"></p>
+                <form id="recoveryForm">
+                    <div class="form-group">
+                        <label for="recoveryCode">Recovery Code</label>
+                        <input type="text" id="recoveryCode" required maxlength="4" pattern="[0-9]{4}" placeholder="1234">
+                    </div>
+                    <div class="error-message" id="recoveryError"></div>
+                    <button type="submit" class="btn btn-primary">Verify Code</button>
+                    <button type="button" class="btn btn-secondary" id="backToEmailBtn">Back</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div class="modal" id="resetPasswordModal">
+        <div class="modal-content">
+            <span class="close" id="closeResetPassword">&times;</span>
+            <h2>Reset Password</h2>
+            <p id="resetEmailDisplay"></p>
+            <form id="resetPasswordForm">
+                <div class="form-group">
+                    <label for="newPassword">New Password (min 8 characters)</label>
+                    <input type="password" id="newPassword" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword">Confirm New Password</label>
+                    <input type="password" id="confirmNewPassword" required>
+                </div>
+                <div class="error-message" id="resetError"></div>
+                <button type="submit" class="btn btn-primary">Reset Password</button>
+            </form>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <script src="../js/auth.js"></script>
+</body>
+</html>

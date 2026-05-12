@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Dashboard</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Override charts-section to stack vertically */
+        .charts-section {
+            display: block !important;
+            margin: 20px 0;
+            padding: 0 20px;
+        }
+
+        /* Style chart containers as histograms */
+        .chart-container {
+            background-color: #1a1a2e;
+            border: 2px solid #ff0000;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            width: 100% !important;
+            max-width: none !important;
+        }
+
+        .chart-container h3 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .chart-container .canvas-wrap {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        .chart-container canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body class="dashboard-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+        
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">3</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+        
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html" class="active">Dashboard</a>
+            <a href="/html/page13_farm-management.html">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+    
+    <main class="main-content">
+        <div class="welcome-section">
+            <h1 id="welcomeMessage">Welcome to SafeZone</h1>
+        </div>
+
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3>Today's Breach Timeline — Hourly <span id="hist1Date" style="font-size:12px;color:#aaa;margin-left:8px;"></span></h3>
+                <div class="canvas-wrap">
+                    <canvas id="histogram1Canvas"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>Daily Breach History <span id="hist2Month" style="font-size:12px;color:#aaa;margin-left:8px;"></span></h3>
+                <div class="canvas-wrap">
+                    <canvas id="histogram2Canvas"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="trends-section">
+            <h3>SafeZone Cow Trends</h3>
+            <div class="trend-dual-container">
+                <div class="trend-display" id="trendDisplayA">
+                    <img src="/images/trend01.jpeg" alt="Cow Trend">
+                </div>
+                <div class="trend-display" id="trendDisplayB">
+                    <img src="/images/trend02.jpeg" alt="Cow Trend">
+                </div>
+            </div>
+        </div>
+
+        <div class="info-sections">
+            <div class="info-card">
+                <h3>About SafeZone</h3>
+                <ul>
+                    <li>SafeZone is an ESP32-powered smart livestock monitoring system designed for precision herd management.</li>
+                    <li>Each collar tracks GPS position in real time and activates a built-in deterrent system when a cow exits its safe zone.</li>
+                    <li>The system operates across three zones — Zone 1 (safe), Zone 2 (warning), and Zone 3 (critical) — with automated responses at each level.</li>
+                    <li>Email and push notifications keep you informed instantly, even when you are away from the farm.</li>
+                    <li>SafeZone is built for farmers who need reliable, autonomous protection without manual intervention.</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3>Reading This Dashboard</h3>
+                <ul>
+                    <li>The hourly timeline shows breach events per hour today — use it to identify high-risk time windows.</li>
+                    <li>The daily history chart reveals weekly patterns to help you improve fence placement and deterrent settings.</li>
+                    <li>Tap the bell icon to review collar alerts, zone breach logs, and system notifications.</li>
+                    <li>Open the navigation menu to access real-time tracking, farm setup, fence editing, or alert customization.</li>
+                    <li>The dashboard refreshes automatically — all data reflects the latest collar and farm activity.</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <script src="../js/app.js"></script>
+    <script src="../js/dashboard-histogram.js"></script>
+    <script>
+        // Update welcome message with username
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const authToken = localStorage.getItem('authToken');
+
+                if (!authToken) {
+                    window.location.href = '/html/page1_login.html';
+                    return;
+                }
+
+                // Fetch user profile to get the username
+                const response = await fetch('/api/auth/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    console.log('User profile data:', userData);
+
+                    // The API returns farmer_name for both farmers and developers
+                    const username = userData.farmer_name;
+
+                    // Update the welcome message
+                    const welcomeElement = document.getElementById('welcomeMessage');
+                    if (welcomeElement && username) {
+                        welcomeElement.textContent = `Welcome to SafeZone ${username}`;
+                    }
+                } else {
+                    console.error('Failed to fetch user profile:', response.status);
+                }
+            } catch (error) {
+                console.error('Error updating welcome message:', error);
+            }
+        });
+    </script>
+</body>
+</html>

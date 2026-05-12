@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Use Cow Collar GPS</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+</head>
+<body class="farm-setup-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">0</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page13_farm-management.html">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="cow-selection">
+            <h1>Use GPS from Cow's Collar</h1>
+            <p style="color: #999; margin-bottom: 30px;">Select a cow collar to use its GPS location as the farm location</p>
+
+            <div class="cow-list-container">
+                <h3>Available Cows</h3>
+                <div class="cow-list" id="cowList">
+                    <p style="color: #999;">Loading cows...</p>
+                </div>
+            </div>
+
+            <div class="farm-input" id="farmInputSection" style="display: none;">
+                <h2>Name Your Farm</h2>
+                <input type="text" id="farmNameField" placeholder="Enter farm name (optional)">
+                <div class="selected-cow-info" id="selectedCowInfo" style="color: #999; margin: 10px 0;"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="window.location.href='/html/page14_farm-and-fence.html'">Back</button>
+                    <button class="btn btn-primary" onclick="confirmCowGPS()">Continue to Fence Editor</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <script src="../js/app.js"></script>
+    <script>
+        let selectedCow = null;
+        let cowGPS = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCowList();
+        });
+
+        async function loadCowList() {
+            try {
+                const authToken = localStorage.getItem('authToken');
+                const response = await fetch('/api/cows', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const cowList = document.getElementById('cowList');
+
+                    if (data.cows && data.cows.length > 0) {
+                        // Filter only connected cows with GPS
+                        const connectedCows = data.cows.filter(cow =>
+                            cow.gps_latitude && cow.gps_longitude && cow.collar_state === 'connected'
+                        );
+
+                        if (connectedCows.length > 0) {
+                            cowList.innerHTML = connectedCows.map(cow => `
+                                <div class="cow-item" onclick="selectCow('${cow.cow_token}', '${cow.cow_name}', '${cow.gps_latitude},${cow.gps_longitude}')">
+                                    <div class="cow-name">${cow.cow_nickname || cow.cow_name}</div>
+                                    <div class="cow-details">
+                                        <small>Collar: ${cow.collar_id}</small>
+                                        <small style="color: #10b981;">● Connected</small>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            cowList.innerHTML = '<p style="color: #ef4444;">No connected cows with GPS available</p>';
+                        }
+                    } else {
+                        cowList.innerHTML = '<p style="color: #999;">You don\'t have any cows registered yet.</p>';
+                    }
+                } else {
+                    cowList.innerHTML = '<p style="color: #ef4444;">Failed to load cows</p>';
+                }
+            } catch (error) {
+                console.error('Load cow list error:', error);
+                document.getElementById('cowList').innerHTML = '<p style="color: #ef4444;">Error loading cows</p>';
+            }
+        }
+
+        function selectCow(cowToken, cowName, gps) {
+            selectedCow = cowToken;
+            cowGPS = gps;
+
+            // Highlight selected cow
+            document.querySelectorAll('.cow-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            // Show farm name input
+            document.getElementById('selectedCowInfo').textContent = `Using GPS from: ${cowName} (${gps})`;
+            document.getElementById('farmInputSection').style.display = 'block';
+        }
+
+        async function confirmCowGPS() {
+            if (!selectedCow || !cowGPS) {
+                alert('Please select a cow first');
+                return;
+            }
+
+            const farmNameInput = document.getElementById('farmNameField').value.trim();
+            const authToken = localStorage.getItem('authToken');
+            const btn = document.querySelector('#farmInputSection .btn-primary');
+            btn.disabled = true;
+            btn.textContent = 'Creating farm...';
+
+            try {
+                const createFarm = async (name, allowRename) => {
+                    const res = await fetch('/api/farms', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({ farmName: name, gps: cowGPS, allowRename })
+                    });
+                    return { res, data: await res.json() };
+                };
+
+                let resolvedFarmName = null;
+                let resolvedFarmToken = null;
+
+                const { res, data } = await createFarm(farmNameInput, false);
+
+                if (res.status === 409) {
+                    const useSuggested = confirm(
+                        `Farm name "${data.originalName}" already exists.\n\n` +
+                        `Do you want to use "${data.suggestedName}" instead?\n\n` +
+                        `Click OK to use "${data.suggestedName}"\nClick Cancel to enter a different name`
+                    );
+                    if (!useSuggested) {
+                        btn.disabled = false;
+                        btn.textContent = 'Continue to Fence Editor';
+                        return;
+                    }
+                    const { data: retryData } = await createFarm(data.originalName, true);
+                    if (!retryData.success) {
+                        throw new Error(retryData.error || 'Failed to create farm');
+                    }
+                    resolvedFarmName = retryData.farm_id || data.suggestedName;
+                    resolvedFarmToken = retryData.farm_token;
+                } else if (data.success) {
+                    resolvedFarmName = data.farm_id || farmNameInput;
+                    resolvedFarmToken = data.farm_token;
+                } else {
+                    throw new Error(data.error || 'Failed to create farm');
+                }
+
+                // Store farm data in sessionStorage to pass to fence editor
+                sessionStorage.setItem('farmSetupMethod', '2');
+                sessionStorage.setItem('farmGPS', cowGPS);
+                sessionStorage.setItem('farmName', resolvedFarmName);
+                sessionStorage.setItem('farmToken', resolvedFarmToken);
+                sessionStorage.setItem('cowToken', selectedCow);
+
+                // Redirect to fence editor
+                window.location.href = '/html/page5_editing-fence.html';
+
+            } catch (error) {
+                console.error('Farm creation error:', error);
+                alert('Failed to create farm: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = 'Continue to Fence Editor';
+            }
+        }
+    </script>
+
+    <style>
+        .cow-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cow-item:hover {
+            border-color: #dc2626;
+            transform: translateX(5px);
+        }
+
+        .cow-item.selected {
+            border-color: #dc2626;
+            background: #2a1a1a;
+        }
+
+        .cow-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .cow-details {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+    </style>
+</body>
+</html>

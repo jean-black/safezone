@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone Dev - Try</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+    <style>
+        .histogram-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #000;
+        }
+
+        .histogram-canvas {
+            border: 2px solid #ff0000;
+            background-color: #000;
+            cursor: crosshair;
+        }
+
+        .histogram-controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            color: #fff;
+            font-size: 12px;
+        }
+
+        .control-group button {
+            background-color: #ff0000;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .control-group button:hover {
+            background-color: #cc0000;
+        }
+
+        .histogram-info {
+            margin-top: 15px;
+            color: #fff;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .dev-section {
+            background-color: #1a1a1a;
+            color: #fff;
+        }
+
+        .dev-section h1 {
+            color: #ff0000;
+        }
+
+        .dev-section p {
+            color: #ccc;
+        }
+    </style>
+</head>
+<body class="dev-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">0</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page13_farm-management.html">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page19_dev-real-time-tracking.html">Dev Real-time Tracking</a>
+            <a href="/html/page20_dev-safezone-management.html">Dev SafeZone Management</a>
+            <a href="/html/page21_dev-safezone-information.html">Dev SafeZone Information</a>
+            <a href="/html/page24_dev-try.html" class="active">Dev Try</a>
+            <a href="/html/page26_dev-safezone-settings.html">Dev System Settings</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="dev-section">
+            <h1>Developer - Histogram1 Test (Vertical Waveform)</h1>
+            <p>Testing breach timeline histogram with Day/Hour/Minute aggregation from dbt9</p>
+        </div>
+
+        <div class="histogram-container">
+            <canvas id="histogramCanvas" class="histogram-canvas" width="1200" height="500"></canvas>
+
+            <div class="histogram-controls">
+                <div class="control-group">
+                    <label>Simulation</label>
+                    <button id="startSimBtn">Start Simulation</button>
+                </div>
+                <div class="control-group">
+                    <label>Actions</label>
+                    <button id="addBreachBtn">Add Random Breach</button>
+                </div>
+                <div class="control-group">
+                    <label>Data</label>
+                    <button id="clearDataBtn">Clear Data</button>
+                </div>
+                <div class="control-group">
+                    <label>View</label>
+                    <button id="resetViewBtn">Reset View</button>
+                </div>
+            </div>
+
+            <div class="histogram-info">
+                <p>Day (7 points) | Hour (24 points) | Minute (60 points) - Auto-scaling enabled</p>
+                <p id="statsDisplay">Total Breaches: 0 | Max Value: 0</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <script src="../js/app.js"></script>
+    <script src="../js/try-app.js"></script>
+</body>
+</html>

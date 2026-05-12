@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Developer Sign Up</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+</head>
+<body class="signup-page">
+    <div class="container">
+        <div class="signup-container">
+            <div class="logo-section">
+                <img src="/images/safezone icone.png" alt="SafeZone Logo" class="app-logo red-fill">
+                <h1 class="app-title">SafeZone</h1>
+            </div>
+
+            <div class="signup-form">
+                <h2>Developer Sign Up</h2>
+                <p class="subtitle">Create a developer account to access SafeZone admin features</p>
+
+                <form id="devSignupForm">
+                    <div class="form-group">
+                        <label for="devName">Developer Name</label>
+                        <input type="text" id="devName" name="devName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="devEmail">Email address</label>
+                        <input type="email" id="devEmail" name="devEmail" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="devPassword">Password</label>
+                        <input type="password" id="devPassword" name="devPassword" required>
+                        <small>Password must be at least 10 characters long</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="devPasswordConfirm">Confirm Password</label>
+                        <input type="password" id="devPasswordConfirm" name="devPasswordConfirm" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="devPasscode">Developer Passcode</label>
+                        <input type="password" id="devPasscode" name="devPasscode" required maxlength="4" placeholder="Enter 4-digit passcode">
+                        <small>Enter the system developer passcode to proceed</small>
+                    </div>
+
+                    <div class="error-message" id="errorMessage"></div>
+                    <div class="success-message" id="successMessage"></div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Create Developer Account</button>
+                        <button type="button" class="btn btn-secondary" id="backToLoginBtn">Back to Login</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <script src="../js/page25.js"></script>
+</body>
+</html>

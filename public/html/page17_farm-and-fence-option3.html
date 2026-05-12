@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Select Saved Farm</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+</head>
+<body class="farm-setup-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">0</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page13_farm-management.html">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="farm-selection">
+            <h1>Select a Saved Farm</h1>
+            <p style="color: #999; margin-bottom: 30px;">Choose a farm to edit or add fences</p>
+
+            <div class="farm-list-container">
+                <h3>Your Farms</h3>
+                <div class="farm-list" id="farmList">
+                    <p style="color: #999;">Loading farms...</p>
+                </div>
+            </div>
+
+            <div class="selected-farm-info" id="selectedFarmInfo" style="display: none;">
+                <div class="info-box">
+                    <h3>Selected Farm</h3>
+                    <p id="farmNameDisplay"></p>
+                    <p id="farmGPSDisplay" style="color: #999; font-size: 0.9rem;"></p>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="window.location.href='/html/page14_farm-and-fence.html'">Back</button>
+                    <button class="btn btn-primary" onclick="confirmSavedFarm()">Continue to Fence Editor</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <script src="../js/app.js"></script>
+    <script>
+        let selectedFarmPage17 = null;
+        let selectedFarmGPSPage17 = null;
+        let selectedFarmNamePage17 = null;
+        let selectedFarmTokenPage17 = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFarmList();
+        });
+
+        async function loadFarmList() {
+            try {
+                const authToken = localStorage.getItem('authToken');
+                const response = await fetch('/api/farms', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const farmList = document.getElementById('farmList');
+
+                    if (data.farms && data.farms.length > 0) {
+                        farmList.innerHTML = data.farms.map(farm => `
+                            <div class="farm-item" data-farm-token="${farm.farm_token}" onclick="selectFarm('${farm.farm_token}', '${farm.farm_name}', '${farm.farm_gps || ''}')">
+                                <div class="farm-name">${farm.farm_name}</div>
+                                <div class="farm-details">
+                                    <small>GPS: ${farm.farm_gps || 'Not set'}</small>
+                                    <small>Created: ${new Date(farm.timestamp).toLocaleDateString()}</small>
+                                </div>
+                            </div>
+                        `).join('');
+
+                        // Auto-select farm when jumped from page6 / page19 Edit Fence button
+                        const jumpToken = sessionStorage.getItem('quickJumpFarmToken');
+                        if (jumpToken) {
+                            sessionStorage.removeItem('quickJumpFarmToken');
+                            sessionStorage.removeItem('quickJumpFarmName');
+                            const autoFarm = data.farms.find(f => f.farm_token === jumpToken);
+                            if (autoFarm) {
+                                selectFarm(autoFarm.farm_token, autoFarm.farm_name, autoFarm.farm_gps || '');
+                                const el = farmList.querySelector(`[data-farm-token="${jumpToken}"]`);
+                                if (el) el.classList.add('selected');
+                            }
+                        }
+                    } else {
+                        farmList.innerHTML = `
+                            <div class="no-farms-message">
+                                <p style="color: #999;">No farms registered yet</p>
+                                <button class="btn btn-secondary" onclick="window.location.href='/html/page14_farm-and-fence.html'">Go Back</button>
+                            </div>
+                        `;
+                    }
+                } else {
+                    farmList.innerHTML = '<p style="color: #ef4444;">Failed to load farms</p>';
+                }
+            } catch (error) {
+                console.error('Load farm list error:', error);
+                document.getElementById('farmList').innerHTML = '<p style="color: #ef4444;">Error loading farms</p>';
+            }
+        }
+
+        function selectFarm(farmToken, farmName, farmGPS) {
+            selectedFarmTokenPage17 = farmToken;
+            selectedFarmNamePage17 = farmName;
+            selectedFarmGPSPage17 = farmGPS;
+
+            // Highlight selected farm
+            document.querySelectorAll('.farm-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            // Show selected farm info
+            document.getElementById('farmNameDisplay').textContent = farmName;
+            document.getElementById('farmGPSDisplay').textContent = `Location: ${farmGPS || 'Not set'}`;
+            document.getElementById('selectedFarmInfo').style.display = 'block';
+        }
+
+        async function confirmSavedFarm() {
+            if (!selectedFarmTokenPage17) {
+                alert('Please select a farm first');
+                return;
+            }
+
+            // Store farm data in sessionStorage to pass to fence editor
+            sessionStorage.setItem('farmSetupMethod', '3');
+            sessionStorage.setItem('farmToken', selectedFarmTokenPage17);
+            sessionStorage.setItem('farmName', selectedFarmNamePage17);
+            if (selectedFarmGPSPage17 && selectedFarmGPSPage17 !== 'null') {
+                sessionStorage.setItem('farmGPS', selectedFarmGPSPage17);
+            }
+
+            // Redirect to fence editor
+            window.location.href = '/html/page5_editing-fence.html';
+        }
+    </script>
+
+    <style>
+        .farm-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .farm-item:hover {
+            border-color: #dc2626;
+            transform: translateX(5px);
+        }
+
+        .farm-item.selected {
+            border-color: #dc2626;
+            background: #2a1a1a;
+        }
+
+        .farm-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .farm-details {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .info-box {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #dc2626;
+            margin: 20px 0;
+        }
+
+        .info-box h3 {
+            margin-top: 0;
+            color: #dc2626;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .no-farms-message {
+            text-align: center;
+            padding: 40px 20px;
+        }
+    </style>
+</body>
+</html>

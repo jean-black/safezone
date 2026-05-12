@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Editing Fence</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+</head>
+<body class="edit-fences-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">0</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page13_farm-management.html">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="fence-editor" id="fenceEditor">
+            <div class="editor-sidebar">
+                <h3>Drawing Tools</h3>
+                <div class="tool-buttons">
+                    <button class="tool-btn active" id="polygonTool" onclick="selectTool('polygon')">
+                        Polygon
+                    </button>
+                    <button class="tool-btn" id="freehandTool" onclick="selectTool('freehand')">
+                        Freehand
+                    </button>
+                </div>
+
+                <div class="location-search">
+                    <h4>Search Location</h4>
+                    <input type="text" id="locationSearchInput" placeholder="Enter lat, lng (e.g., 35.20287, 33.36490)">
+                    <button class="btn btn-primary" onclick="searchLocation()">Go to Location</button>
+                    <button class="btn btn-secondary" id="cancelLocationBtn" onclick="cancelManualLocation()" style="display: none; margin-top: 10px;">Cancel Manual Location</button>
+                    <button class="btn btn-info" onclick="enableFreehandMarker()" style="margin-top: 10px;">Mark Farm on Map</button>
+                </div>
+
+                <div class="fence-actions">
+                    <input type="text" id="fenceNameInput" placeholder="Enter fence name">
+                    <button class="btn btn-success" onclick="saveFence()">Save Fence</button>
+                    <button class="btn btn-danger" onclick="deleteFence()">Delete Fence</button>
+                </div>
+
+                <div class="zoom-controls">
+                    <button class="btn btn-secondary" onclick="zoomIn()">Zoom In</button>
+                    <button class="btn btn-secondary" onclick="zoomOut()">Zoom Out</button>
+                    <button class="btn btn-secondary" onclick="autoFocus()">Auto Focus</button>
+                </div>
+
+                <div class="marker-visibility-control">
+                    <h4>Display Options</h4>
+                    <label class="toggle-container">
+                        <input type="checkbox" id="toggleFarmMarkerEditor" checked onchange="toggleFarmMarkerInEditor(this.checked)">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Show Farm GPS Marker</span>
+                    </label>
+                    <label class="toggle-container">
+                        <input type="checkbox" id="toggleFenceLinesEditor" checked onchange="toggleFenceLinesInEditor(this.checked)">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Show Fence Lines</span>
+                    </label>
+                </div>
+
+                <div class="back-button-container">
+                    <button class="btn btn-secondary" onclick="window.location.href='/html/page14_farm-and-fence.html'">Back to Farm Selection</button>
+                </div>
+            </div>
+
+            <div class="map-container">
+                <div id="map" class="fence-map"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <!-- Save Mode Modal: shown when editing an existing farm fence (page17 → page5) -->
+    <div id="saveModeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#1a1a1a; border:2px solid #dc2626; border-radius:12px; padding:30px; max-width:340px; width:90%; text-align:center;">
+            <h3 style="margin:0 0 8px; color:#fff; font-size:1.2rem;">Save Fence</h3>
+            <p style="color:#999; margin:0 0 22px; font-size:0.88rem;">How do you want to save this new fence shape?</p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button onclick="executeSaveFence('replace')" style="padding:12px; background:#dc2626; border:none; border-radius:8px; color:#fff; font-size:0.95rem; cursor:pointer; font-weight:600;">Replace Previous</button>
+                <button onclick="executeSaveFence('new')" style="padding:12px; background:#2a2a2a; border:2px solid #555; border-radius:8px; color:#fff; font-size:0.95rem; cursor:pointer;">Save as New</button>
+                <button onclick="document.getElementById('saveModeModal').style.display='none'" style="padding:9px; background:transparent; border:1px solid #444; border-radius:8px; color:#777; font-size:0.85rem; cursor:pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script defer src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script defer src="../js/app.js"></script>
+
+    <style>
+        .fence-editor {
+            display: flex;
+            height: calc(100vh - 120px);
+            gap: 0;
+        }
+
+        .editor-sidebar {
+            width: 300px;
+            background: #1a1a1a;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid #333;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        .fence-map {
+            width: 100%;
+            height: 100%;
+            min-height: 600px;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+    </style>
+</body>
+</html>

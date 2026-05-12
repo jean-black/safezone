@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - User Profile</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+</head>
+<body class="profile-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+        
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">3</span>
+            </button>
+            <button class="header-btn active">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+        
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page13_farm-management.html">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+    
+    <main class="main-content">
+        <div class="profile-container">
+            <h1>User Profile</h1>
+            
+            <div class="profile-info">
+                <div class="info-card">
+                    <h3>Account Information</h3>
+                    <div class="info-item">
+                        <span class="label">Username:</span>
+                        <span class="value" id="currentUsername">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Email:</span>
+                        <span class="value" id="currentUserId">farmer@example.com</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Account Created:</span>
+                        <span class="value" id="accountTimestamp">2025-01-15 10:30:00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="profile-forms">
+                <div class="form-section">
+                    <h3>Update Username</h3>
+                    <form id="updateUsernameForm">
+                        <div class="form-group">
+                            <label for="newUsername">New Username:</label>
+                            <input type="text" id="newUsername" name="newUsername" required minlength="3" maxlength="50">
+                            <small>Choose a unique username (3-50 characters)</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Username</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <h3>Update Email</h3>
+                    <form id="updateUserIdForm">
+                        <div class="form-group">
+                            <label for="newUserId">New Email Address:</label>
+                            <input type="email" id="newUserId" name="newUserId" required>
+                            <small>You'll need to confirm your new email address</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Email</button>
+                    </form>
+                </div>
+                
+                <div class="form-section">
+                    <h3>Change Password</h3>
+                    <form id="changePasswordForm">
+                        <div class="form-group">
+                            <label for="currentPassword">Current Password:</label>
+                            <input type="password" id="currentPassword" name="currentPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">New Password:</label>
+                            <input type="password" id="newPassword" name="newPassword" required minlength="8">
+                            <small>Password must be at least 8 characters long</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm New Password:</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Change Password</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="logout-section">
+                <button class="btn btn-danger logout-btn" onclick="logout()">
+                    Log Out
+                </button>
+            </div>
+        </div>
+        
+        <div class="edit-modal" id="editModal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h3 id="modalTitle">Edit Item</h3>
+                <form id="editForm">
+                    <div class="form-group">
+                        <label for="editInput" id="editLabel">New Name:</label>
+                        <input type="text" id="editInput" name="editInput" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+    
+    <script src="../js/app.js"></script>
+</body>
+</html>

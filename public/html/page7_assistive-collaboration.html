@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Collaborative Recovery</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+
+    <style>
+        .collaborative-page {
+            background: linear-gradient(135deg, #dc2626 0%, #0e1626 100%);
+        }
+
+        .tracking-controls {
+            background: rgba(14, 22, 38, 0.95) !important;
+            border: 1px solid #dc2626;
+        }
+
+        .map-container {
+            flex: 1;
+            background-color: var(--dark-blue);
+            border-radius: 12px;
+            border: 1px solid var(--red-primary);
+            overflow: hidden;
+        }
+
+        .collaborative-map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Details panel styling - matching alarm format */
+        .details-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .details-section h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 11px;
+            font-weight: bold;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .details-section:first-child h4 {
+            color: #3b82f6; /* Blue for Agent */
+        }
+
+        .details-section:last-child h4 {
+            color: #f59e0b; /* Orange for Cow */
+        }
+
+        .agent-icon {
+            font-size: 1.1rem;
+        }
+
+        .cow-icon {
+            color: #e74c3c;
+        }
+
+        .detail-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #bdc3c7;
+        }
+
+        .detail-item.zone2 {
+            border-left-color: #f39c12;
+        }
+
+        .detail-item.zone3 {
+            border-left-color: #e74c3c;
+        }
+
+        .detail-item.zone1 {
+            border-left-color: #27ae60;
+        }
+
+        .detail-item .cow-name {
+            font-weight: 600;
+            color: var(--white);
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-item .cow-info {
+            font-size: 0.875rem;
+            color: #bdc3c7;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-indicator.connected {
+            background: #27ae60;
+            box-shadow: 0 0 8px rgba(39, 174, 96, 0.6);
+        }
+
+        .status-indicator.disconnected {
+            background: #95a5a6;
+        }
+    </style>
+</head>
+<body class="collaborative-page">
+    <header class="header">
+        <div class="header-left">
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+            <h2>Collaborative Recovery</h2>
+        </div>
+    </header>
+    
+    <main class="main-content">
+        <div class="request-section" id="requestSection">
+            <div class="request-card">
+                <h1>Cow Recovery Request</h1>
+                <p>You have been invited to help recover a lost cow. Do you accept this request?</p>
+                
+                <div class="request-actions">
+                    <button class="btn btn-success" onclick="acceptRequest()">Accept</button>
+                    <button class="btn btn-danger" onclick="denyRequest()">Deny</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recovery-interface hidden" id="recoveryInterface">
+            <!-- Tracking Controls -->
+            <div class="tracking-controls" style="background: rgba(255, 255, 255, 0.95); padding: 1rem 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); margin-bottom: 1rem;">
+                <div class="control-group" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" onclick="autoFocusFence()">
+                        Auto Focus Fence
+                    </button>
+
+                    <button class="btn btn-secondary" onclick="autoFocusAll()">
+                        Auto Focus All
+                    </button>
+
+                    <button class="btn btn-primary" onclick="centerOnCow()">
+                        Center on Lost Cow
+                    </button>
+                </div>
+            </div>
+
+            <div class="recovery-layout">
+                <div class="map-container">
+                    <div id="collaborativeMap" class="collaborative-map"></div>
+                </div>
+                
+                <div class="recovery-panel">
+                    <h3>Recovery Information</h3>
+
+                    <!-- Agent Section -->
+                    <div class="details-section">
+                        <h4>Agent</h4>
+                        <div id="agentDetails">
+                            <div class="detail-item">
+                                <div class="cow-info">
+                                    <span class="status-indicator disconnected"></span>
+                                    Waiting for agent to connect...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cow Section -->
+                    <div class="details-section">
+                        <h4>Cow</h4>
+                        <div id="cowDetails">
+                            <div class="detail-item">
+                                <div class="cow-info">Loading cow...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recovery-info">
+                        <p><strong>Status:</strong> <span id="recoveryStatus">Moving towards cow</span></p>
+                        <p><strong>Time:</strong> <span id="recoveryTime">--:--</span></p>
+                    </div>
+                    
+                    <div class="status-messages" id="statusMessages">
+                        <div class="status-message">Navigation started. Please move towards the cow location.</div>
+                    </div>
+                    
+                    <div class="recovery-actions" id="recoveryActions">
+                        <button class="btn btn-primary hidden" id="foundCowBtn" onclick="confirmCowFound()">
+                            Did you find the cow?
+                        </button>
+                        <button class="btn btn-success hidden" id="completedBtn" onclick="completeRecovery()">
+                            Recovery Completed
+                        </button>
+                    </div>
+                    
+                    <div class="countdown-timer hidden" id="countdownTimer">
+                        <p>Time remaining: <span id="countdown">15</span> seconds</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="completion-screen hidden" id="completionScreen">
+            <div class="completion-card">
+                <h1>Well Done!</h1>
+                <p>You have successfully completed the cow recovery task.</p>
+                <p>Thank you for your assistance!</p>
+            </div>
+        </div>
+        
+        <div class="disconnected-screen hidden" id="disconnectedScreen">
+            <div class="disconnected-card">
+                <h1>Session Ended</h1>
+                <p>The collaborative session has been ended by the employer.</p>
+                <p>Thank you for your time.</p>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script defer src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script defer src="../js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Notifications</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+</head>
+<body class="notifications-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+        
+        <div class="header-right">
+            <button class="header-btn active">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">3</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+        
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+    
+    <main class="main-content">
+        <div class="notifications-header">
+            <h1>Notifications</h1>
+            <button class="btn btn-secondary" id="markAllReadBtn">Mark All as Read</button>
+        </div>
+        
+        <div class="notifications-list" id="notificationsList">
+            <div class="notification-item unread" onclick="openNotification(1)">
+                <div class="notification-content">
+                    <div class="notification-title">Cow Breach Alert</div>
+                    <div class="notification-preview">Cow #C001 has breached the fence at Farm A...</div>
+                    <div class="notification-time">2 hours ago</div>
+                </div>
+            </div>
+            
+            <div class="notification-item unread" onclick="openNotification(2)">
+                <div class="notification-content">
+                    <div class="notification-title">System Alert</div>
+                    <div class="notification-preview">ESP32 device #001 has disconnected...</div>
+                    <div class="notification-time">4 hours ago</div>
+                </div>
+            </div>
+            
+            <div class="notification-item unread" onclick="openNotification(3)">
+                <div class="notification-content">
+                    <div class="notification-title">Daily Report</div>
+                    <div class="notification-preview">Your daily farm report is ready for download...</div>
+                    <div class="notification-time">6 hours ago</div>
+                </div>
+            </div>
+            
+            <div class="notification-item read" onclick="openNotification(4)">
+                <div class="notification-content">
+                    <div class="notification-title">Fence Updated</div>
+                    <div class="notification-preview">Fence boundaries have been successfully updated...</div>
+                    <div class="notification-time">1 day ago</div>
+                </div>
+            </div>
+            
+            <div class="notification-item read" onclick="openNotification(5)">
+                <div class="notification-content">
+                    <div class="notification-title">Welcome to SafeZone</div>
+                    <div class="notification-preview">Thank you for joining SafeZone. Get started by...</div>
+                    <div class="notification-time">2 days ago</div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+    
+    <script src="../js/app.js"></script>
+</body>
+</html>

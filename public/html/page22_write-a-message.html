@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Write a Message</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+    <style>
+        .message-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .message-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+        }
+
+        .message-header h1 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 28px;
+        }
+
+        .message-header p {
+            margin: 10px 0 0 0;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+
+        .char-counter {
+            text-align: right;
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .message-type-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .type-option {
+            padding: 15px;
+            background: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .type-option:hover {
+            background: #d5dbdb;
+        }
+
+        .type-option.selected {
+            background: #3498db;
+            border-color: #2980b9;
+            color: white;
+        }
+
+        .type-option input[type="radio"] {
+            display: none;
+        }
+
+        .recipient-info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .recipient-info h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        .recipient-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .recipient-tag {
+            background: #3498db;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .recipient-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-primary:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .priority-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .priority-option {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .priority-option:hover {
+            border-color: #3498db;
+        }
+
+        .priority-option.selected {
+            border-color: #3498db;
+            background: #ebf5fb;
+        }
+
+        .priority-option.high.selected {
+            border-color: #e74c3c;
+            background: #fadbd8;
+        }
+
+        .priority-option input[type="radio"] {
+            display: none;
+        }
+
+        .template-section {
+            margin-bottom: 20px;
+        }
+
+        .template-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .template-btn {
+            padding: 8px 16px;
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .template-btn:hover {
+            background: #d5dbdb;
+        }
+    </style>
+</head>
+<body class="tracking-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">3</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page13_farm-management.html">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="message-container">
+            <div class="message-header">
+                <h1>Write a Message</h1>
+                <p>Send messages to farmers, developers, or farm clients</p>
+            </div>
+
+            <div class="alert" id="alertBox"></div>
+
+            <form id="messageForm">
+                <div class="form-group">
+                    <label>Message Type</label>
+                    <div class="message-type-selector">
+                        <label class="type-option selected">
+                            <input type="radio" name="messageType" value="notification" checked>
+                            <div>📢 Notification</div>
+                        </label>
+                        <label class="type-option">
+                            <input type="radio" name="messageType" value="alert">
+                            <div>⚠️ Alert</div>
+                        </label>
+                        <label class="type-option">
+                            <input type="radio" name="messageType" value="message">
+                            <div>💬 Message</div>
+                        </label>
+                        <label class="type-option">
+                            <input type="radio" name="messageType" value="system">
+                            <div>⚙️ System</div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="recipientType">Recipient Type</label>
+                    <select id="recipientType" onchange="updateRecipientList()">
+                        <option value="">-- Select Recipient Type --</option>
+                        <option value="farmer">Farmer</option>
+                        <option value="developer">Developer</option>
+                        <option value="client">Farm Client</option>
+                        <option value="all_farmers">All Farmers</option>
+                        <option value="all_developers">All Developers</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="recipientSelectGroup" style="display: none;">
+                    <label for="recipient">Select Recipient</label>
+                    <select id="recipient" onchange="addRecipient()">
+                        <option value="">-- Select a recipient --</option>
+                    </select>
+                </div>
+
+                <div class="recipient-info" id="recipientInfo" style="display: none;">
+                    <h3>Recipients:</h3>
+                    <div class="recipient-list" id="recipientList">
+                        <!-- Recipients will be added here dynamically -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="subject">Subject</label>
+                    <input type="text" id="subject" placeholder="Enter message subject" maxlength="100">
+                    <div class="char-counter">
+                        <span id="subjectCounter">0</span>/100
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Priority</label>
+                    <div class="priority-selector">
+                        <label class="priority-option">
+                            <input type="radio" name="priority" value="low" checked>
+                            <div>Low</div>
+                        </label>
+                        <label class="priority-option selected">
+                            <input type="radio" name="priority" value="normal">
+                            <div>Normal</div>
+                        </label>
+                        <label class="priority-option high">
+                            <input type="radio" name="priority" value="high">
+                            <div>High</div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group template-section">
+                    <label>Quick Templates</label>
+                    <div class="template-buttons">
+                        <button type="button" class="template-btn" onclick="applyTemplate('breach')">Fence Breach Alert</button>
+                        <button type="button" class="template-btn" onclick="applyTemplate('maintenance')">Maintenance Notice</button>
+                        <button type="button" class="template-btn" onclick="applyTemplate('update')">System Update</button>
+                        <button type="button" class="template-btn" onclick="applyTemplate('reminder')">Reminder</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" placeholder="Type your message here..." maxlength="1000"></textarea>
+                    <div class="char-counter">
+                        <span id="messageCounter">0</span>/1000
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" onclick="sendMessage()">
+                        Send Message
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="saveDraft()">
+                        Save Draft
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="clearForm()">
+                        Clear
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <script src="../js/app.js"></script>
+    <script>
+        let selectedRecipients = [];
+
+        // Character counters
+        document.getElementById('subject').addEventListener('input', function() {
+            document.getElementById('subjectCounter').textContent = this.value.length;
+        });
+
+        document.getElementById('message').addEventListener('input', function() {
+            document.getElementById('messageCounter').textContent = this.value.length;
+        });
+
+        // Message type selector
+        document.querySelectorAll('.type-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+            });
+        });
+
+        // Priority selector
+        document.querySelectorAll('.priority-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.priority-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+            });
+        });
+
+        function updateRecipientList() {
+            const recipientType = document.getElementById('recipientType').value;
+            const recipientSelect = document.getElementById('recipient');
+            const recipientSelectGroup = document.getElementById('recipientSelectGroup');
+
+            recipientSelect.innerHTML = '<option value="">-- Select a recipient --</option>';
+
+            if (recipientType === 'all_farmers' || recipientType === 'all_developers') {
+                recipientSelectGroup.style.display = 'none';
+                addRecipientTag(recipientType === 'all_farmers' ? 'All Farmers' : 'All Developers', recipientType);
+            } else if (recipientType) {
+                recipientSelectGroup.style.display = 'block';
+
+                // Simulate loading recipients from database
+                if (recipientType === 'farmer') {
+                    recipientSelect.innerHTML += '<option value="farmer1">Jean Claude (Farmer)</option>';
+                    recipientSelect.innerHTML += '<option value="farmer2">Samuel (Farmer)</option>';
+                } else if (recipientType === 'developer') {
+                    recipientSelect.innerHTML += '<option value="dev1">Developer Admin</option>';
+                    recipientSelect.innerHTML += '<option value="dev2">Support Team</option>';
+                } else if (recipientType === 'client') {
+                    recipientSelect.innerHTML += '<option value="client1">Client A</option>';
+                    recipientSelect.innerHTML += '<option value="client2">Client B</option>';
+                }
+            } else {
+                recipientSelectGroup.style.display = 'none';
+            }
+        }
+
+        function addRecipient() {
+            const recipientSelect = document.getElementById('recipient');
+            const selectedOption = recipientSelect.options[recipientSelect.selectedIndex];
+
+            if (recipientSelect.value && !selectedRecipients.includes(recipientSelect.value)) {
+                selectedRecipients.push(recipientSelect.value);
+                addRecipientTag(selectedOption.text, recipientSelect.value);
+                recipientSelect.value = '';
+            }
+        }
+
+        function addRecipientTag(name, value) {
+            const recipientInfo = document.getElementById('recipientInfo');
+            const recipientList = document.getElementById('recipientList');
+
+            recipientInfo.style.display = 'block';
+
+            const tag = document.createElement('div');
+            tag.className = 'recipient-tag';
+            tag.innerHTML = `
+                ${name}
+                <span class="remove" onclick="removeRecipient('${value}', this.parentElement)">×</span>
+            `;
+            recipientList.appendChild(tag);
+        }
+
+        function removeRecipient(value, element) {
+            selectedRecipients = selectedRecipients.filter(r => r !== value);
+            element.remove();
+
+            if (selectedRecipients.length === 0) {
+                document.getElementById('recipientInfo').style.display = 'none';
+            }
+        }
+
+        function applyTemplate(type) {
+            const messageField = document.getElementById('message');
+            const subjectField = document.getElementById('subject');
+
+            switch(type) {
+                case 'breach':
+                    subjectField.value = 'Fence Breach Alert';
+                    messageField.value = 'Alert: A cow has breached the fence boundary. Please check the real-time tracking page for more details and take appropriate action.';
+                    break;
+                case 'maintenance':
+                    subjectField.value = 'Scheduled Maintenance Notice';
+                    messageField.value = 'Dear user, we will be performing scheduled maintenance on the SafeZone system. During this time, some features may be temporarily unavailable. We apologize for any inconvenience.';
+                    break;
+                case 'update':
+                    subjectField.value = 'System Update Available';
+                    messageField.value = 'A new system update is available for SafeZone. This update includes performance improvements and bug fixes. Please update at your earliest convenience.';
+                    break;
+                case 'reminder':
+                    subjectField.value = 'Reminder';
+                    messageField.value = 'This is a friendly reminder to check your farm alerts and ensure all systems are functioning properly.';
+                    break;
+            }
+
+            document.getElementById('subjectCounter').textContent = subjectField.value.length;
+            document.getElementById('messageCounter').textContent = messageField.value.length;
+        }
+
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = `alert ${type} show`;
+
+            setTimeout(() => {
+                alertBox.classList.remove('show');
+            }, 5000);
+        }
+
+        function sendMessage() {
+            const subject = document.getElementById('subject').value;
+            const message = document.getElementById('message').value;
+            const messageType = document.querySelector('input[name="messageType"]:checked').value;
+            const priority = document.querySelector('input[name="priority"]:checked').value;
+
+            if (selectedRecipients.length === 0) {
+                showAlert('Please select at least one recipient', 'error');
+                return;
+            }
+
+            if (!subject.trim()) {
+                showAlert('Please enter a subject', 'error');
+                return;
+            }
+
+            if (!message.trim()) {
+                showAlert('Please enter a message', 'error');
+                return;
+            }
+
+            // TODO: Send message to server
+            console.log('Sending message:', {
+                recipients: selectedRecipients,
+                subject,
+                message,
+                messageType,
+                priority
+            });
+
+            showAlert('Message sent successfully!', 'success');
+
+            // Clear form after sending
+            setTimeout(() => {
+                clearForm();
+            }, 2000);
+        }
+
+        function saveDraft() {
+            const subject = document.getElementById('subject').value;
+            const message = document.getElementById('message').value;
+
+            if (!subject.trim() && !message.trim()) {
+                showAlert('Nothing to save', 'error');
+                return;
+            }
+
+            // TODO: Save draft to local storage or server
+            console.log('Saving draft');
+            showAlert('Draft saved successfully!', 'success');
+        }
+
+        function clearForm() {
+            document.getElementById('messageForm').reset();
+            document.getElementById('subjectCounter').textContent = '0';
+            document.getElementById('messageCounter').textContent = '0';
+            selectedRecipients = [];
+            document.getElementById('recipientList').innerHTML = '';
+            document.getElementById('recipientInfo').style.display = 'none';
+            document.getElementById('recipientSelectGroup').style.display = 'none';
+
+            // Reset selections
+            document.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('selected'));
+            document.querySelector('.type-option').classList.add('selected');
+            document.querySelectorAll('.priority-option').forEach(opt => opt.classList.remove('selected'));
+            document.querySelectorAll('.priority-option')[1].classList.add('selected');
+        }
+    </script>
+</body>
+</html>

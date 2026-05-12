@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Real-time Tracking</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+</head>
+<body class="tracking-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+        
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">3</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+        
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page13_farm-management.html">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html" class="active">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+    
+    <main class="main-content">
+        <div class="farm-display-header">
+            <h2 id="currentFarmName">Loading farms...</h2>
+        </div>
+
+        <div class="farm-selection-panel">
+            <h3>Select Farm to View:</h3>
+            <div class="farm-radio-group" id="farmRadioGroup">
+                <!-- Farm radio buttons will be loaded here dynamically -->
+            </div>
+        </div>
+
+        <div class="visibility-controls-panel">
+            <h3>Map Display Options:</h3>
+            <div class="visibility-toggles">
+                <label class="toggle-container">
+                    <input type="checkbox" id="toggleFarmMarkers" checked onchange="toggleFarmMarkersVisibility(this.checked)">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Show Farm GPS Markers</span>
+                </label>
+                <label class="toggle-container">
+                    <input type="checkbox" id="toggleFences" checked onchange="toggleFencesVisibility(this.checked)">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Show Fence Lines</span>
+                </label>
+                <label class="toggle-container">
+                    <input type="checkbox" id="toggleCowNameDisplay" onchange="toggleCowNameDisplayMode(this.checked)">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Show Cow Nicknames</span>
+                </label>
+                <label class="toggle-container" id="lockViewContainer" title="Lock the map to the current view — pan and zoom are disabled until unlocked">
+                    <input type="checkbox" id="toggleLockView" onchange="toggleMapLockView(this.checked)">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Lock View</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="tracking-controls">
+            <div class="control-group">
+                <button class="btn btn-secondary" onclick="autoFocusFence()">
+                    Smart Auto Focus
+                </button>
+
+                <button class="btn btn-danger" onclick="openRecoveryModal()" style="background: #e74c3c; border-color: #c0392b;">
+                    Cow Recovery
+                </button>
+
+                <button id="myGpsToggleBtn" class="btn btn-secondary" onclick="toggleMyGPS()" title="Use this device as a GPS sensor to test fence security">
+                    My GPS
+                </button>
+
+                <button class="btn btn-secondary" onclick="goToEditFence()" title="Edit fence for the currently selected farm">
+                    Edit Fence
+                </button>
+            </div>
+
+            <script>
+            function goToEditFence() {
+                const ft = window.selectedFarmToken || null;
+                if (!ft) { alert('Please select a farm first.'); return; }
+                const farm = (window.farmsData || []).find(f => f.farm_token === ft);
+                if (!farm || !farm.farm_gps) { alert('Farm GPS not available. Cannot open fence editor.'); return; }
+                sessionStorage.setItem('farmSetupMethod', '3');
+                sessionStorage.setItem('farmToken', farm.farm_token);
+                sessionStorage.setItem('farmName', farm.farm_name);
+                sessionStorage.setItem('farmGPS', farm.farm_gps);
+                window.location.href = '/html/page5_editing-fence.html';
+            }
+            </script>
+
+            <div class="fence-thickness-bar" id="fenceThicknessBar" style="display:none; align-items:center; gap:8px; padding:4px 8px; background:#1a1a2e; border-radius:6px; margin-top:4px;">
+                <label style="color:#bdc3c7; font-size:12px; white-space:nowrap;">Line1 thickness:</label>
+                <input type="range" id="fenceThicknessSlider" min="0.1" max="5.0" step="0.1" value="0.5"
+                       style="flex:1; cursor:pointer;" oninput="onThicknessInput(this.value)">
+                <span id="fenceThicknessValue" style="color:#27ae60; font-size:12px; font-weight:600; min-width:36px;">0.5m</span>
+            </div>
+            
+            <div class="dropdown-controls">
+                <div class="dropdown">
+                    <button class="dropdown-btn" onclick="toggleDropdown('fenceDropdown')">
+                        Fence List ▼
+                    </button>
+                    <div class="dropdown-content" id="fenceDropdown">
+                        <!-- Fences will be loaded dynamically from the API -->
+                    </div>
+                </div>
+                
+                <div class="dropdown">
+                    <button class="dropdown-btn" onclick="toggleDropdown('cowDropdown')">
+                        Cow List ▼
+                    </button>
+                    <div class="dropdown-content" id="cowDropdown">
+                        <div class="cow-item">
+                            <div class="cow-info">
+                                <span class="cow-id">Cow #C001</span>
+                                <div class="cow-controls">
+                                    <label class="switch">
+                                        <input type="checkbox" checked onchange="toggleCowVisibility('C001', this)">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" onchange="toggleAlarm('C001', this)">
+                                        <span class="checkmark"></span>
+                                        <span class="label-text">Alarm</span>
+                                    </label>
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" onchange="toggleMarker('C001', this)">
+                                        <span class="checkmark"></span>
+                                        <span class="label-text">Marker</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="cow-item">
+                            <div class="cow-info">
+                                <span class="cow-id">Cow #C002</span>
+                                <div class="cow-controls">
+                                    <label class="switch">
+                                        <input type="checkbox" checked onchange="toggleCowVisibility('C002', this)">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" onchange="toggleAlarm('C002', this)">
+                                        <span class="checkmark"></span>
+                                        <span class="label-text">Alarm</span>
+                                    </label>
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" onchange="toggleMarker('C002', this)">
+                                        <span class="checkmark"></span>
+                                        <span class="label-text">Marker</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="cow-item">
+                            <div class="cow-info">
+                                <span class="cow-id">Cow #C003</span>
+                                <div class="cow-controls">
+                                    <label class="switch">
+                                        <input type="checkbox" checked onchange="toggleCowVisibility('C003', this)">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" onchange="toggleAlarm('C003', this)">
+                                        <span class="checkmark"></span>
+                                        <span class="label-text">Alarm</span>
+                                    </label>
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" onchange="toggleMarker('C003', this)">
+                                        <span class="checkmark"></span>
+                                        <span class="label-text">Marker</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Cows List Panel -->
+        <div class="new-cows-panel" id="newCowsPanel" style="display: none;">
+            <div class="panel-header">
+                <h3>New Cows (Unassigned)</h3>
+                <button class="close-panel-btn" onclick="closeNewCowsPanel()">&times;</button>
+            </div>
+            <div class="new-cows-list" id="newCowsList">
+                <p class="loading-message">Loading new cows...</p>
+            </div>
+        </div>
+
+        <style>
+            .new-cows-panel {
+                background: white;
+                border-radius: 8px;
+                padding: 1.5rem;
+                margin: 1rem 0;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border-left: 4px solid #f39c12;
+            }
+
+            .panel-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid #f39c12;
+            }
+
+            .panel-header h3 {
+                margin: 0;
+                color: #2c3e50;
+            }
+
+            .close-panel-btn {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: #95a5a6;
+                transition: color 0.3s;
+            }
+
+            .close-panel-btn:hover {
+                color: #e74c3c;
+            }
+
+            .new-cows-list {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 1rem;
+            }
+
+            .new-cow-card {
+                background: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 6px;
+                padding: 1rem;
+            }
+
+            .new-cow-card h4 {
+                margin: 0 0 0.5rem 0;
+                color: #2c3e50;
+            }
+
+            .new-cow-info {
+                font-size: 0.9rem;
+                color: #666;
+                margin-bottom: 0.5rem;
+            }
+
+            .assign-farm-select {
+                width: 100%;
+                padding: 0.5rem;
+                margin: 0.5rem 0;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }
+
+            .assign-btn {
+                width: 100%;
+                padding: 0.5rem;
+                background: #3498db;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: background 0.3s;
+            }
+
+            .assign-btn:hover {
+                background: #2980b9;
+            }
+
+            .bulk-assign-section {
+                background: #e8f4f8;
+                padding: 1rem;
+                border-radius: 6px;
+                margin-bottom: 1rem;
+            }
+
+            .bulk-assign-section h4 {
+                margin-top: 0;
+            }
+
+            .bulk-controls {
+                display: flex;
+                gap: 0.5rem;
+                align-items: center;
+            }
+
+            .bulk-controls select {
+                flex: 1;
+                padding: 0.5rem;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }
+
+            .bulk-controls button {
+                padding: 0.5rem 1rem;
+                background: #2ecc71;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                white-space: nowrap;
+            }
+
+            .bulk-controls button:hover {
+                background: #27ae60;
+            }
+        </style>
+
+        <div class="tracking-layout">
+            <div class="map-container">
+                <div id="trackingMap" class="tracking-map"></div>
+            </div>
+            
+            <div class="alarm-panel" id="alarmPanel">
+                <h3>Real-time Alarms</h3>
+                <div class="alarm-list" id="alarmList">
+                    <p class="no-alarms">No active alarms</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="cow-details-modal" id="cowDetailsModal">
+            <div class="modal-content">
+                <span class="close" onclick="closeCowDetails()">&times;</span>
+                <h3 id="cowDetailsTitle">Cow Details</h3>
+                <div id="cowDetailsContent">
+                    <p><strong>Cow ID:</strong> <span id="cowId"></span></p>
+                    <p><strong>Tagging:</strong> <span id="cowTag"></span></p>
+                    <p><strong>Speed:</strong> <span id="cowSpeed"></span> km/h</p>
+                    <p><strong>Alarm Breaches:</strong></p>
+                    <ul id="alarmBreaches">
+                        <li>Alarm 1: <span id="alarm1Count">0</span> times</li>
+                        <li>Alarm 2: <span id="alarm2Count">0</span> times</li>
+                        <li>Alarm 3: <span id="alarm3Count">0</span> times</li>
+                    </ul>
+                    <div class="modal-actions">
+                        <button class="btn btn-primary" id="collaborativeBtn" onclick="generateCollaborativeLink()">
+                            Assistive Collaborative
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cow Recovery Modal -->
+        <div class="modal" id="cowRecoveryModal" style="display: none;">
+            <div class="modal-overlay" onclick="closeRecoveryModal()"></div>
+            <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h2>Cow Recovery</h2>
+                    <button class="close-btn" onclick="closeRecoveryModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="color: #6b7280; margin-bottom: 1.5rem;">Select cows that are outside the fence for collaborative recovery assistance.</p>
+
+                    <div id="recoverySelectFarm" class="form-group" style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Select Farm:</label>
+                        <select id="recoveryFarmSelect" class="form-select" onchange="loadCowsForRecovery()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                            <option value="">-- Select Farm --</option>
+                        </select>
+                    </div>
+
+                    <div id="recoveryAgentInput" class="form-group" style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Agent ID (MAC Address):</label>
+                        <input type="text" id="agentIdInput" placeholder="e.g., 12:34:56:78:9A:BC" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        <small style="color: #6b7280; display: block; margin-top: 0.25rem;">Enter the MAC address of the agent helping with recovery</small>
+                    </div>
+
+                    <div class="recovery-modal-cow-list" id="recoveryCowList" style="min-height: 100px;">
+                        <p style="color: #9ca3af; text-align: center; padding: 2rem;">Select a farm to view cows outside the fence</p>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; gap: 0.5rem; justify-content: flex-end; padding: 1rem; border-top: 1px solid #e5e7eb;">
+                    <button class="btn btn-secondary" onclick="closeRecoveryModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="startRecovery()" id="startRecoveryBtn" disabled style="background: #e74c3c; border-color: #c0392b;">
+                        Start Recovery
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            /* Modal Styles */
+            .modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .modal-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+            }
+
+            .modal-content {
+                position: relative;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+                z-index: 10001;
+            }
+
+            .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1.5rem;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .modal-header h2 {
+                margin: 0;
+                font-size: 1.5rem;
+                color: #111827;
+            }
+
+            .close-btn {
+                background: none;
+                border: none;
+                font-size: 2rem;
+                color: #9ca3af;
+                cursor: pointer;
+                line-height: 1;
+                padding: 0;
+                width: 32px;
+                height: 32px;
+            }
+
+            .close-btn:hover {
+                color: #111827;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .recovery-modal-cow-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .cow-checkbox-item {
+                display: flex;
+                align-items: center;
+                padding: 0.75rem;
+                background: rgba(0, 0, 0, 0.02);
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .cow-checkbox-item:hover {
+                background: rgba(0, 0, 0, 0.05);
+                border-color: #d1d5db;
+            }
+
+            .cow-checkbox-item.selected {
+                background: rgba(231, 76, 60, 0.1);
+                border-color: #e74c3c;
+            }
+
+            .cow-checkbox-item input[type="checkbox"] {
+                width: 18px;
+                height: 18px;
+                margin-right: 0.75rem;
+                cursor: pointer;
+            }
+
+            .cow-checkbox-info {
+                flex: 1;
+            }
+
+            .cow-name {
+                font-weight: 600;
+                color: #111827;
+                margin-bottom: 0.25rem;
+            }
+
+            .cow-status {
+                font-size: 0.875rem;
+                color: #6b7280;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .zone-badge {
+                display: inline-block;
+                padding: 0.125rem 0.5rem;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                font-weight: 600;
+            }
+
+            .zone-badge.zone2 {
+                background: #f39c12;
+                color: white;
+            }
+
+            .zone-badge.zone3 {
+                background: #e74c3c;
+                color: white;
+            }
+        </style>
+    </main>
+    
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script defer src="../js/app.js?v=1764488502"></script>
+    <script defer src="../js/tracking-new-cows.js"></script>
+
+    <!-- Alarm System Audio -->
+    <audio id="alarm1Audio" preload="auto">
+        <source src="../audio/cow.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Audio Enable Button -->
+    <div id="audioEnablePrompt" style="position: fixed; top: 80px; right: 10px; z-index: 1001; background: #f59e0b; color: #000; padding: 10px 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: none;">
+        <div style="font-weight: bold; margin-bottom: 5px;">🔊 Alarm Audio Disabled</div>
+        <div style="font-size: 12px; margin-bottom: 8px;">Click to enable alarm sounds</div>
+        <button id="enableAudioBtn" style="background: #000; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; width: 100%;">
+            Enable Audio
+        </button>
+    </div>
+
+    <!-- Alarm System Script -->
+    <script>
+        // Alarm System State
+        const alarmState = {
+            alarm1Active: false,
+            alarm1Timer: null,
+            alarm1Duration: 20000, // 20 seconds
+            alarm1StartTime: null,
+            cowTimers: new Map(), // Track time each cow spends in zone2
+            cowZones: new Map(), // Track which zone each cow is in
+            emailSent: new Map(), // Track if email was sent for each cow
+            cowsTriggeredReset: new Set(), // Track which cows have already triggered alarm reset in current cycle
+            audioElement: null,
+            audioEnabled: false
+        };
+
+        // Fetch prefs eagerly so load handler can read audioEnabled without racing
+        const _page6PrefsFetch = fetch('/api/auth/preferences', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+        }).then(r => r.ok ? r.json() : { prefs: {} }).then(d => d.prefs || {}).catch(() => ({}));
+
+        // Initialize alarm system when page loads
+        window.addEventListener('load', async function() {
+            alarmState.audioElement = document.getElementById('alarm1Audio');
+            console.log('🔊 Alarm system initialized');
+
+            const savedPrefs = await _page6PrefsFetch;
+
+            // Setup audio enable button
+            const enableBtn = document.getElementById('enableAudioBtn');
+            const audioPrompt = document.getElementById('audioEnablePrompt');
+
+            enableBtn.addEventListener('click', async () => {
+                try {
+                    // Try to play and immediately pause to unlock audio
+                    await alarmState.audioElement.play();
+                    alarmState.audioElement.pause();
+                    alarmState.audioElement.currentTime = 0;
+
+                    alarmState.audioEnabled = true;
+                    audioPrompt.style.display = 'none';
+                    console.log('✅ Alarm audio enabled successfully');
+                    window.savePrefs();
+                } catch (error) {
+                    console.error('Failed to enable audio:', error);
+                    alert('Failed to enable audio. Please try again.');
+                }
+            });
+
+            if (savedPrefs.audioEnabled) {
+                // Auto-unlock on first user interaction — prompt never shows again
+                alarmState._audioWasEnabled = true;
+                const unlockAudio = async () => {
+                    try {
+                        await alarmState.audioElement.play();
+                        alarmState.audioElement.pause();
+                        alarmState.audioElement.currentTime = 0;
+                        alarmState.audioEnabled = true;
+                        console.log('✅ Audio auto-unlocked from saved preference');
+                    } catch(e) { /* silent */ }
+                };
+                document.addEventListener('click', unlockAudio, { once: true });
+            } else {
+                audioPrompt.style.display = 'block';
+            }
+
+            window._prefsRestored = true;
+            startAlarmMonitoring();
+        });
+
+        // Start monitoring system
+        function startAlarmMonitoring() {
+            setInterval(checkCowAlarms, 1000); // Check every second
+        }
+
+        // Main alarm checking function
+        function checkCowAlarms() {
+            if (!window.currentCows || !window.currentFences) return;
+
+            const currentTime = Date.now();
+            let cowsInZone2 = [];
+
+            // Check each cow's position
+            window.currentCows.forEach(cowMarker => {
+                if (!cowMarker.cowData) return;
+
+                const cowToken = cowMarker.cowData.cow_token;
+                const cowPosition = cowMarker.getLatLng();
+
+                // Determine which zone the cow is in
+                const zone = determineCowZone(cowPosition);
+                const previousZone = alarmState.cowZones.get(cowToken);
+
+                // Update cow zone
+                alarmState.cowZones.set(cowToken, zone);
+
+                // Handle zone2 (between line1 and line2)
+                if (zone === 'zone2') {
+                    cowsInZone2.push(cowToken);
+
+                    // If cow just entered zone2, start timer
+                    if (previousZone !== 'zone2') {
+                        alarmState.cowTimers.set(cowToken, {
+                            enteredAt: currentTime,
+                            emailSentAt10: false,
+                            emailSentAt25: false,
+                            alarm1Triggered: false  // Track if alarm1 was already triggered for this cow
+                        });
+                        console.log(`🐄 Cow ${cowMarker.cowData.cow_nickname || cowToken} entered zone2`);
+                    }
+
+                    const timer = alarmState.cowTimers.get(cowToken);
+                    const timeInZone2 = (currentTime - timer.enteredAt) / 1000; // seconds
+
+                    // Trigger alarm1 after 10 seconds in zone2 (only once per cow entry)
+                    if (timeInZone2 >= 10 && !alarmState.alarm1Active && !timer.alarm1Triggered) {
+                        activateAlarm1(cowMarker.cowData);
+                        timer.alarm1Triggered = true; // Mark that we've triggered alarm for this cow
+                        // Mark this cow as the initial trigger (so it doesn't reset its own alarm)
+                        alarmState.cowsTriggeredReset.add(cowToken);
+                    }
+
+                    // Reset alarm timer if another cow triggers while alarm is active (only once per cow)
+                    if (timeInZone2 >= 10 && alarmState.alarm1Active && !alarmState.cowsTriggeredReset.has(cowToken)) {
+                        console.log(`🔄 [ALARM1 RESET] New cow triggering alarm reset: ${cowMarker.cowData.cow_nickname || cowToken}`);
+                        resetAlarm1Timer(cowMarker.cowData);
+                        // Mark this cow as having triggered a reset
+                        alarmState.cowsTriggeredReset.add(cowToken);
+                    }
+
+                    // Send email after 25 seconds in zone2
+                    if (timeInZone2 >= 25 && !timer.emailSentAt25) {
+                        sendZone2Email(cowMarker.cowData);
+                        timer.emailSentAt25 = true;
+                    }
+
+                } else if (zone === 'zone3') {
+                    // Cow breached line2 - send email immediately
+                    if (!alarmState.emailSent.has(cowToken)) {
+                        sendLine2BreachEmail(cowMarker.cowData);
+                        alarmState.emailSent.set(cowToken, true);
+                    }
+                } else if (zone === 'zone1') {
+                    // Cow returned to safe zone
+                    if (alarmState.cowTimers.has(cowToken)) {
+                        alarmState.cowTimers.delete(cowToken);
+                        alarmState.emailSent.delete(cowToken);
+                        alarmState.cowsTriggeredReset.delete(cowToken); // Clean up reset tracking
+                        console.log(`✅ Cow ${cowMarker.cowData.cow_nickname || cowToken} returned to zone1`);
+                    }
+                }
+            });
+
+            // Include My GPS marker in alarm monitoring (alarm1 + alarm2 + alarm3)
+            if (myGpsState.active && myGpsState.zone) {
+                if (myGpsState.zone === 'zone2') {
+                    cowsInZone2.push('mygps');
+                    if (!alarmState.cowTimers.has('mygps')) {
+                        alarmState.cowTimers.set('mygps', { enteredAt: currentTime, alarm1Triggered: false, emailSentAt25: false });
+                    }
+                    const gt = alarmState.cowTimers.get('mygps');
+                    const timeInZone = (currentTime - gt.enteredAt) / 1000;
+                    // alarm1 — audio after 10s
+                    if (timeInZone >= 10 && !alarmState.alarm1Active && !gt.alarm1Triggered) {
+                        activateAlarm1({ cow_nickname: 'My GPS', cow_token: 'mygps' });
+                        gt.alarm1Triggered = true;
+                        alarmState.cowsTriggeredReset.add('mygps');
+                    }
+                    if (timeInZone >= 10 && alarmState.alarm1Active && !alarmState.cowsTriggeredReset.has('mygps')) {
+                        resetAlarm1Timer({ cow_nickname: 'My GPS', cow_token: 'mygps' });
+                        alarmState.cowsTriggeredReset.add('mygps');
+                    }
+                    // alarm2 — email after 25s
+                    if (timeInZone >= 25 && !gt.emailSentAt25) {
+                        sendZone2Email({ cow_nickname: 'My GPS', cow_token: 'mygps' });
+                        gt.emailSentAt25 = true;
+                    }
+                } else if (myGpsState.zone === 'zone3') {
+                    cowsInZone2.push('mygps'); // keeps alarm1 alive through zone3
+                    // alarm3 — email immediately on zone3 entry
+                    if (!alarmState.emailSent.has('mygps')) {
+                        sendLine2BreachEmail({ cow_nickname: 'My GPS', cow_token: 'mygps' });
+                        alarmState.emailSent.set('mygps', true);
+                    }
+                } else {
+                    if (alarmState.cowTimers.has('mygps')) {
+                        alarmState.cowTimers.delete('mygps');
+                        alarmState.cowsTriggeredReset.delete('mygps');
+                        alarmState.emailSent.delete('mygps');
+                    }
+                }
+            }
+
+            // Stop alarm1 if no cows (or My GPS) in zone2
+            if (cowsInZone2.length === 0 && alarmState.alarm1Active) {
+                stopAlarm1();
+            }
+
+            // Update the alarm panel UI
+            updateAlarmPanelDisplay();
+        }
+
+        // Update the real-time alarm panel display
+        function updateAlarmPanelDisplay() {
+            const alarmList = document.getElementById('alarmList');
+            if (!alarmList) return;
+
+            // Collect all cows currently outside the fence
+            const alarmsOutsideFence = [];
+
+            // Check all cows for zone violations
+            if (window.currentCows) {
+                window.currentCows.forEach(cowMarker => {
+                    if (!cowMarker.cowData) return;
+
+                    const cowToken = cowMarker.cowData.cow_token;
+                    const zone = alarmState.cowZones.get(cowToken);
+
+                    if (zone === 'zone2' || zone === 'zone3') {
+                        // Use actual_time_outside_fence from database (updated every 10 seconds)
+                        let timeOutside = 0;
+                        if (cowMarker.cowData.actual_time_outside_fence !== undefined && cowMarker.cowData.actual_time_outside_fence !== null) {
+                            // Database value is already real-time (updated every 10 seconds by server)
+                            timeOutside = cowMarker.cowData.actual_time_outside_fence;
+                        } else {
+                            // Fallback to client-side timer calculation
+                            const timer = alarmState.cowTimers.get(cowToken);
+                            timeOutside = timer ? Math.floor((Date.now() - timer.enteredAt) / 1000) : 0;
+                        }
+
+                        const cowName = cowMarker.cowData.cow_nickname || cowMarker.cowData.cow_name || cowToken;
+
+                        alarmsOutsideFence.push({
+                            cowName: cowName,
+                            zone: zone === 'zone2' ? 'Zone2' : 'Zone3',
+                            timeOutside: timeOutside
+                        });
+                    }
+                });
+            }
+
+            // My GPS pinned row — always first when active
+            let myGpsHtml = '';
+            if (myGpsState.active && myGpsState.zone) {
+                const zoneNum   = myGpsState.zone === 'zone1' ? 1 : myGpsState.zone === 'zone2' ? 2 : 3;
+                const zoneColor = zoneNum === 1 ? '#22c55e' : zoneNum === 2 ? '#f59e0b' : '#ef4444';
+                const distText  = myGpsState.fenceDist !== null ? `${Math.round(myGpsState.fenceDist)}m` : '—';
+                const accText   = myGpsState.accuracy  !== null ? `${Math.round(myGpsState.accuracy)}m`  : '—';
+                myGpsHtml = `
+                    <div class="alarm-item" style="padding:0.5rem 0;">
+                        <div style="font-size:0.9rem;color:#666;">
+                            <span style="font-weight:500;">My GPS</span>
+                            <span style="margin:0 0.5rem;">•</span>${distText}
+                            <span style="margin:0 0.5rem;">•</span><span style="color:${zoneColor};font-weight:600;">Zone ${zoneNum}</span>
+                            <span style="margin:0 0.5rem;">•</span>${accText}
+                        </div>
+                    </div>`;
+            }
+
+            // Update the UI
+            if (alarmsOutsideFence.length === 0 && !myGpsHtml) {
+                alarmList.innerHTML = '<p class="no-alarms">No active alarms</p>';
+            } else {
+                let html = myGpsHtml;
+                alarmsOutsideFence.forEach(alarm => {
+                    const minutes = Math.floor(alarm.timeOutside / 60);
+                    const seconds = alarm.timeOutside % 60;
+                    const timeText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                    const zoneColor = alarm.zone === 'Zone2' ? '#f59e0b' : '#ef4444';
+                    html += `
+                        <div class="alarm-item" style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">
+                            <div style="font-weight: 500; margin-bottom: 0.25rem;">${alarm.cowName}</div>
+                            <div style="font-size: 0.9rem; color: #666;">
+                                <span>Time outside: ${timeText}</span>
+                                <span style="margin: 0 0.5rem;">•</span>
+                                <span style="color: ${zoneColor}; font-weight: 600;">${alarm.zone}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                alarmList.innerHTML = html;
+            }
+        }
+
+        // Determine which zone a cow is in
+        function determineCowZone(cowPosition) {
+            // Get the selected fence
+            const selectedFence = window.currentFences.find(f => f.selected);
+            if (!selectedFence || !selectedFence.getLatLngs) {
+                return 'zone1'; // Default to safe zone
+            }
+
+            const fencePolygon = selectedFence;
+
+            // Check if cow is inside fence
+            if (isPointInPolygon(cowPosition, fencePolygon)) {
+                const thickness = fencePolygon.fenceThickness ?? 0.5;
+                const distFromBoundary = getDistanceFromFenceBoundary(cowPosition, fencePolygon);
+                if (distFromBoundary <= thickness) {
+                    return 'line1';
+                }
+                return 'zone1';
+            }
+
+            const distanceFromFence = getDistanceFromFenceBoundary(cowPosition, fencePolygon);
+            if (distanceFromFence <= 50) {
+                return 'zone2';
+            } else {
+                return 'zone3';
+            }
+        }
+
+        // Check if point is inside polygon
+        function isPointInPolygon(point, polygon) {
+            const latLngs = polygon.getLatLngs()[0];
+            let inside = false;
+            const x = point.lat, y = point.lng;
+
+            for (let i = 0, j = latLngs.length - 1; i < latLngs.length; j = i++) {
+                const xi = latLngs[i].lat, yi = latLngs[i].lng;
+                const xj = latLngs[j].lat, yj = latLngs[j].lng;
+
+                const intersect = ((yi > y) !== (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+
+            return inside;
+        }
+
+        // Get minimum distance from point to polygon boundary
+        function getDistanceFromFenceBoundary(point, polygon) {
+            const latLngs = polygon.getLatLngs()[0];
+            let minDistance = Infinity;
+
+            for (let i = 0; i < latLngs.length; i++) {
+                const p1 = latLngs[i];
+                const p2 = latLngs[(i + 1) % latLngs.length];
+
+                const distance = getDistanceToLineSegment(point, p1, p2);
+                minDistance = Math.min(minDistance, distance);
+            }
+
+            return minDistance;
+        }
+
+        // Calculate distance from point to line segment
+        function getDistanceToLineSegment(point, lineStart, lineEnd) {
+            const A = point.lat - lineStart.lat;
+            const B = point.lng - lineStart.lng;
+            const C = lineEnd.lat - lineStart.lat;
+            const D = lineEnd.lng - lineStart.lng;
+
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            let param = -1;
+
+            if (lenSq !== 0) param = dot / lenSq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = lineStart.lat;
+                yy = lineStart.lng;
+            } else if (param > 1) {
+                xx = lineEnd.lat;
+                yy = lineEnd.lng;
+            } else {
+                xx = lineStart.lat + param * C;
+                yy = lineStart.lng + param * D;
+            }
+
+            const dx = point.lat - xx;
+            const dy = point.lng - yy;
+
+            // Return distance in meters (approximate)
+            return Math.sqrt(dx * dx + dy * dy) * 111000; // degrees to meters
+        }
+
+        // ── My GPS feature ──────────────────────────────────────────────────────
+        const myGpsState = {
+            active: false,
+            watchId: null,
+            marker: null,
+            lastLat: null,
+            lastLng: null,
+            lastTimestamp: null,
+            zone: null,
+            fenceDist: null,
+            accuracy: null,
+            method: null
+        };
+
+        const GPS_MAX_SPEED  = 15;  // m/s — reject impossible jumps (≈54 km/h)
+        const GPS_THRESHOLD  = 20;  // metres — ≤20m = GPS chip (mygps2), >50m = WiFi (mygps1)
+        const WIFI_THRESHOLD = 50;  // metres — above this is definitely WiFi/Network
+
+        function toggleMyGPS() {
+            if (myGpsState.active) {
+                stopMyGPS();
+            } else {
+                startMyGPS();
+            }
+        }
+
+        function startMyGPS() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by this browser.');
+                return;
+            }
+            const btn = document.getElementById('myGpsToggleBtn');
+            btn.textContent = 'My GPS — acquiring…';
+            btn.disabled = true;
+            myGpsState.watchId = navigator.geolocation.watchPosition(
+                onMyGpsPosition,
+                onMyGpsError,
+                { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+            );
+        }
+
+        function stopMyGPS() {
+            if (myGpsState.watchId !== null) {
+                navigator.geolocation.clearWatch(myGpsState.watchId);
+                myGpsState.watchId = null;
+            }
+            if (myGpsState.marker) {
+                window.map.removeLayer(myGpsState.marker);
+                myGpsState.marker = null;
+            }
+            // Clean up alarm tracking for My GPS token
+            alarmState.cowTimers.delete('mygps');
+            alarmState.cowsTriggeredReset.delete('mygps');
+            alarmState.emailSent.delete('mygps');
+
+            myGpsState.active    = false;
+            myGpsState.lastLat   = null;
+            myGpsState.lastLng   = null;
+            myGpsState.lastTimestamp = null;
+            myGpsState.zone      = null;
+            myGpsState.fenceDist = null;
+            myGpsState.accuracy  = null;
+            myGpsState.method    = null;
+
+            const btn = document.getElementById('myGpsToggleBtn');
+            btn.textContent = 'My GPS';
+            btn.style.background = '';
+            btn.style.borderColor = '';
+            btn.style.color = '';
+            btn.disabled = false;
+        }
+
+        function gpsHaversine(lat1, lng1, lat2, lng2) {
+            const R = 6371000, r = Math.PI / 180;
+            const dLat = (lat2 - lat1) * r, dLng = (lng2 - lng1) * r;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLng/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        function buildGpsTooltip(lat, lng, accuracy) {
+            const method = accuracy <= GPS_THRESHOLD ? 'GPS' : 'wifi';
+            const color  = method === 'GPS' ? '#22c55e' : '#ef4444';
+            return `<div style="text-align:center;line-height:1.4;font-size:11px;">
+                <b style="font-size:12px;">My GPS<span style="color:${color}">(${method})</span></b><br>
+                ${lat.toFixed(6)}<br>
+                ${lng.toFixed(6)}
+            </div>`;
+        }
+
+        function onMyGpsPosition(pos) {
+            const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+            const now = pos.timestamp;
+
+            // Reject impossible speed jumps
+            if (myGpsState.lastLat !== null) {
+                const dist = gpsHaversine(myGpsState.lastLat, myGpsState.lastLng, lat, lng);
+                const dt   = (now - myGpsState.lastTimestamp) / 1000;
+                if (dt > 0 && dist / dt > GPS_MAX_SPEED) return;
+            }
+
+            myGpsState.lastLat = lat;
+            myGpsState.lastLng = lng;
+            myGpsState.lastTimestamp = now;
+            const latlng = L.latLng(lat, lng);
+
+            if (!myGpsState.marker) {
+                const icon = L.divIcon({
+                    html: '<div style="background-color:#facc15;width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 0 4px rgba(0,0,0,0.5);"></div>',
+                    className: 'cow-marker', iconSize: [16, 16], iconAnchor: [8, 8]
+                });
+                myGpsState.marker = L.marker(latlng, { icon, zIndexOffset: 1000 })
+                    .addTo(window.map)
+                    .bindTooltip(buildGpsTooltip(lat, lng, accuracy), {
+                        permanent: true, direction: 'top', className: 'cow-name-label', offset: [0, -8]
+                    });
+                myGpsState.active = true;
+                const btn = document.getElementById('myGpsToggleBtn');
+                btn.textContent = 'My GPS';
+                btn.disabled = false;
+            } else {
+                myGpsState.marker.setLatLng(latlng);
+                myGpsState.marker.setTooltipContent(buildGpsTooltip(lat, lng, accuracy));
+            }
+
+            // Store state — read by checkCowAlarms and updateAlarmPanelDisplay
+            const selectedFence = window.currentFences && window.currentFences.find(f => f.selected);
+            myGpsState.zone      = determineCowZone(latlng);
+            myGpsState.fenceDist = selectedFence ? getDistanceFromFenceBoundary(latlng, selectedFence) : null;
+            myGpsState.accuracy  = accuracy;
+            myGpsState.method    = accuracy <= GPS_THRESHOLD ? 'GPS' : 'wifi';
+        }
+
+        function onMyGpsError(err) {
+            stopMyGPS();
+            let msg;
+            if (err.code === 1) {
+                msg = 'Location permission denied.\n\nPlease allow location access in your browser settings and try again.';
+            } else if (err.code === 2) {
+                msg = 'GPS module not found on this device.\n\nThe "My GPS" feature (mygps2) requires a device with a built-in GPS chip for accurate fence boundary security testing.';
+            } else {
+                msg = 'GPS signal timed out.\n\nMake sure you are outdoors with a clear view of the sky, then try again.';
+            }
+            alert(msg);
+        }
+        // ────────────────────────────────────────────────────────────────────────
+
+        // Activate alarm1 (audio)
+        function activateAlarm1(cowData) {
+            console.log('🚨 Alarm1 activated for cow:', cowData.cow_nickname || cowData.cow_token);
+
+            alarmState.alarm1Active = true;
+            alarmState.alarm1StartTime = Date.now();
+
+            // Play audio only if enabled
+            if (alarmState.audioEnabled && alarmState.audioElement) {
+                alarmState.audioElement.currentTime = 0;
+                alarmState.audioElement.loop = true; // Loop until timer ends
+                alarmState.audioElement.play().catch(err => {
+                    console.error('Failed to play alarm audio:', err);
+                    console.warn('⚠️ Click "Enable Audio" button to hear alarm sounds');
+                });
+            } else {
+                console.warn('⚠️ Alarm audio not enabled - click "Enable Audio" button to hear sounds');
+                // Show the prompt again
+                const audioPrompt = document.getElementById('audioEnablePrompt');
+                if (audioPrompt) {
+                    audioPrompt.style.display = 'block';
+                }
+            }
+
+            // Set timer to stop after 20 seconds
+            console.log(`⏰ [ALARM1 TIMER] Setting 20-second timer (${alarmState.alarm1Duration}ms)`);
+            alarmState.alarm1Timer = setTimeout(() => {
+                console.log('⏰ [ALARM1 TIMER] 20 seconds elapsed - stopping alarm');
+                stopAlarm1();
+            }, alarmState.alarm1Duration);
+        }
+
+        // Reset alarm1 timer (when another cow triggers while active)
+        function resetAlarm1Timer(cowData) {
+            console.log('🔄 Alarm1 timer reset for cow:', cowData.cow_nickname || cowData.cow_token);
+
+            // Clear existing timer
+            if (alarmState.alarm1Timer) {
+                console.log('⏰ [ALARM1 TIMER] Clearing previous timer');
+                clearTimeout(alarmState.alarm1Timer);
+            }
+
+            // Reset start time
+            alarmState.alarm1StartTime = Date.now();
+
+            // Restart audio if stopped and audio is enabled
+            if (alarmState.audioEnabled && alarmState.audioElement && alarmState.audioElement.paused) {
+                alarmState.audioElement.currentTime = 0;
+                alarmState.audioElement.play().catch(err => {
+                    console.error('Failed to play alarm audio:', err);
+                });
+            }
+
+            // Set new timer
+            console.log(`⏰ [ALARM1 TIMER] Resetting 20-second timer (${alarmState.alarm1Duration}ms)`);
+            alarmState.alarm1Timer = setTimeout(() => {
+                console.log('⏰ [ALARM1 TIMER] 20 seconds elapsed after reset - stopping alarm');
+                stopAlarm1();
+            }, alarmState.alarm1Duration);
+        }
+
+        // Stop alarm1
+        function stopAlarm1() {
+            console.log('🔕 Alarm1 stopped');
+
+            alarmState.alarm1Active = false;
+            alarmState.alarm1StartTime = null;
+
+            // Clear timer
+            if (alarmState.alarm1Timer) {
+                clearTimeout(alarmState.alarm1Timer);
+                alarmState.alarm1Timer = null;
+            }
+
+            // Force stop audio - multiple approaches to ensure it stops
+            if (alarmState.audioElement) {
+                try {
+                    alarmState.audioElement.pause();
+                    alarmState.audioElement.currentTime = 0;
+                    alarmState.audioElement.loop = false;
+                    console.log('✓ Audio stopped successfully');
+                } catch (error) {
+                    console.error('Error stopping audio:', error);
+                }
+            }
+
+            // Also try to stop via ID directly as backup
+            const audioElement = document.getElementById('alarm1Audio');
+            if (audioElement) {
+                try {
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                    audioElement.loop = false;
+                } catch (error) {
+                    console.error('Error stopping audio via ID:', error);
+                }
+            }
+
+            // Clear the reset tracking set for next alarm cycle
+            alarmState.cowsTriggeredReset.clear();
+            console.log('✓ Reset tracking cleared for next alarm cycle');
+        }
+
+        // Send email for zone2 (25 seconds)
+        async function sendZone2Email(cowData) {
+            console.log('📧 Sending zone2 email for cow:', cowData.cow_nickname || cowData.cow_token);
+
+            try {
+                await fetch('/api/alarms/zone2-breach', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        cowToken: cowData.cow_token,
+                        cowName: cowData.cow_name,
+                        cowNickname: cowData.cow_nickname,
+                        latitude: cowData.gps_latitude,
+                        longitude: cowData.gps_longitude,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            } catch (error) {
+                console.error('Failed to send zone2 email:', error);
+            }
+        }
+
+        // Send email for line2 breach
+        async function sendLine2BreachEmail(cowData) {
+            console.log('📧 Sending line2 breach email for cow:', cowData.cow_nickname || cowData.cow_token);
+
+            try {
+                await fetch('/api/alarms/line2-breach', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        cowToken: cowData.cow_token,
+                        cowName: cowData.cow_name,
+                        cowNickname: cowData.cow_nickname,
+                        latitude: cowData.gps_latitude,
+                        longitude: cowData.gps_longitude,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            } catch (error) {
+                console.error('Failed to send line2 breach email:', error);
+            }
+        }
+
+        // ============================================
+        // COW RECOVERY MODAL FUNCTIONS
+        // ============================================
+
+        let selectedCowsForRecovery = new Set();
+
+        function openRecoveryModal() {
+            const modal = document.getElementById('cowRecoveryModal');
+            modal.style.display = 'flex';
+
+            // Load farms into dropdown
+            loadFarmsForRecovery();
+
+            // Reset selections
+            selectedCowsForRecovery.clear();
+            document.getElementById('recoveryCowList').innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 2rem;">Select a farm to view cows outside the fence</p>';
+            document.getElementById('startRecoveryBtn').disabled = true;
+            document.getElementById('agentIdInput').value = '';
+        }
+
+        function closeRecoveryModal() {
+            const modal = document.getElementById('cowRecoveryModal');
+            modal.style.display = 'none';
+            selectedCowsForRecovery.clear();
+        }
+
+        async function loadFarmsForRecovery() {
+            try {
+                const response = await fetch('/api/farms', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to load farms');
+
+                const data = await response.json();
+                const farmSelect = document.getElementById('recoveryFarmSelect');
+
+                farmSelect.innerHTML = '<option value="">-- Select Farm --</option>';
+
+                data.farms.forEach(farm => {
+                    const option = document.createElement('option');
+                    option.value = farm.farm_token;
+                    option.textContent = farm.farm_name;
+                    farmSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading farms for recovery:', error);
+            }
+        }
+
+        async function loadCowsForRecovery() {
+            const farmToken = document.getElementById('recoveryFarmSelect').value;
+            const cowListContainer = document.getElementById('recoveryCowList');
+
+            if (!farmToken) {
+                cowListContainer.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 2rem;">Select a farm to view cows outside the fence</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/cows', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to load cows');
+
+                const data = await response.json();
+
+                // Filter cows for this farm that are outside the fence (zone2 or zone3)
+                const cowsOutsideFence = data.cows.filter(cow =>
+                    cow.farm_token === farmToken &&
+                    (cow.state_fence === 'zone2' || cow.state_fence === 'zone3')
+                );
+
+                if (cowsOutsideFence.length === 0) {
+                    cowListContainer.innerHTML = '<p style="color: #22c55e; text-align: center; padding: 2rem; font-weight: 600;">✓ All cows are safely inside the fence!</p>';
+                    return;
+                }
+
+                cowListContainer.innerHTML = '';
+
+                cowsOutsideFence.forEach(cow => {
+                    const cowItem = document.createElement('div');
+                    cowItem.className = 'cow-checkbox-item';
+                    cowItem.id = `recovery-cow-${cow.cow_token}`;
+
+                    const zoneClass = cow.state_fence === 'zone2' ? 'zone2' : 'zone3';
+                    const zoneText = cow.state_fence === 'zone2' ? 'Warning Zone' : 'Danger Zone';
+                    const displayName = cow.cow_nickname || cow.cow_name;
+
+                    cowItem.innerHTML = `
+                        <input type="checkbox"
+                               id="checkbox-${cow.cow_token}"
+                               onclick="toggleCowSelection('${cow.cow_token}', this.parentElement)">
+                        <div class="cow-checkbox-info">
+                            <div class="cow-name">${displayName}</div>
+                            <div class="cow-status">
+                                Collar: ${cow.collar_id} •
+                                <span class="zone-badge ${zoneClass}">${zoneText}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    cowListContainer.appendChild(cowItem);
+                });
+
+            } catch (error) {
+                console.error('Error loading cows for recovery:', error);
+                cowListContainer.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 2rem;">Error loading cows. Please try again.</p>';
+            }
+        }
+
+        function toggleCowSelection(cowToken, itemElement) {
+            if (selectedCowsForRecovery.has(cowToken)) {
+                selectedCowsForRecovery.delete(cowToken);
+                itemElement.classList.remove('selected');
+            } else {
+                selectedCowsForRecovery.add(cowToken);
+                itemElement.classList.add('selected');
+            }
+
+            // Enable/disable start button based on selection
+            const agentId = document.getElementById('agentIdInput').value.trim();
+            document.getElementById('startRecoveryBtn').disabled =
+                selectedCowsForRecovery.size === 0 || !agentId;
+        }
+
+        // Enable button when agent ID is entered
+        document.addEventListener('DOMContentLoaded', function() {
+            const agentInput = document.getElementById('agentIdInput');
+            if (agentInput) {
+                agentInput.addEventListener('input', function() {
+                    const agentId = this.value.trim();
+                    document.getElementById('startRecoveryBtn').disabled =
+                        selectedCowsForRecovery.size === 0 || !agentId;
+                });
+            }
+        });
+
+        async function startRecovery() {
+            if (selectedCowsForRecovery.size === 0) {
+                alert('Please select at least one cow for recovery');
+                return;
+            }
+
+            const agentId = document.getElementById('agentIdInput').value.trim();
+            if (!agentId) {
+                alert('Please enter the agent MAC address');
+                return;
+            }
+
+            const farmToken = document.getElementById('recoveryFarmSelect').value;
+            if (!farmToken) {
+                alert('Please select a farm');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/recovery/create', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        agentId: agentId,
+                        farmToken: farmToken,
+                        lostCowTokens: Array.from(selectedCowsForRecovery),
+                        expiresIn: 24 // 24 hours
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to create recovery request');
+                }
+
+                const data = await response.json();
+
+                // Close the modal
+                closeRecoveryModal();
+
+                // Show success message with recovery code
+                alert(`Recovery request created successfully!\n\nRecovery Code: ${data.recoveryCode}\n\nShare this code with the agent. The recovery page will open in a new window.`);
+
+                // Open recovery page (page 7) in new window
+                const recoveryUrl = `/html/page7_assistive-collaboration.html?recoveryId=${data.recoveryId}`;
+                window.open(recoveryUrl, '_blank');
+
+            } catch (error) {
+                console.error('Error creating recovery request:', error);
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        /**
+         * Update cow list dropdown to show only cows from selected farm
+         * Called when farm selection changes
+         */
+        window.updateCowListDropdown = async function() {
+            try {
+                console.log('🔄 Updating cow list dropdown for selected farm:', window.selectedFarmName);
+
+                // Fetch all cows
+                const response = await fetch(`${API_BASE_URL}/cows`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to fetch cows for dropdown');
+                    return;
+                }
+
+                const data = await response.json();
+                let cows = data.cows || [];
+
+                // Filter cows by selected farm
+                if (window.selectedFarmToken) {
+                    // Specific farm selected: show only cows from this farm
+                    cows = cows.filter(cow =>
+                        cow.farm_token === window.selectedFarmToken
+                    );
+                    console.log(`🔍 Filtered cows for farm ${window.selectedFarmToken}: ${cows.length} cows`);
+                } else if (window.selectedFarmName === 'all') {
+                    // "All farms" selected: show ALL cows
+                    console.log(`🔍 [All Farms] Showing all cows: ${cows.length} cows`);
+                } else {
+                    // No farm selection yet
+                    console.log(`🔍 No farm selected yet, showing all cows: ${cows.length} cows`);
+                }
+
+                // Update cow dropdown list
+                const cowDropdown = document.getElementById('cowDropdown');
+                if (!cowDropdown) {
+                    console.warn('cowDropdown element not found');
+                    return;
+                }
+
+                // Clear existing cow list
+                cowDropdown.innerHTML = '';
+
+                if (cows.length === 0) {
+                    cowDropdown.innerHTML = '<div class="cow-item"><p style="color: #999; padding: 10px; text-align: center;">No cows found for this farm</p></div>';
+                    await window.restorePrefs?.(); // still restore map-toggle prefs even with no cows
+                    return;
+                }
+
+                // Create cow list items
+                cows.forEach(cow => {
+                    const cowItem = document.createElement('div');
+                    cowItem.className = 'cow-item';
+                    cowItem.innerHTML = `
+                        <div class="cow-info">
+                            <span class="cow-id">${cow.cow_nickname || cow.cow_id || 'Unknown Cow'}</span>
+                            <div class="cow-controls">
+                                <label class="switch">
+                                    <input type="checkbox" checked onchange="toggleCowVisibility('${cow.cow_token}', this)">
+                                    <span class="slider"></span>
+                                </label>
+                                <label class="checkbox-container">
+                                    <input type="checkbox" onchange="toggleAlarm('${cow.cow_token}', this)">
+                                    <span class="checkmark"></span>
+                                    <span class="label-text">Alarm</span>
+                                </label>
+                                <label class="checkbox-container">
+                                    <input type="checkbox" onchange="toggleMarker('${cow.cow_token}', this)">
+                                    <span class="checkmark"></span>
+                                    <span class="label-text">Marker</span>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                    cowDropdown.appendChild(cowItem);
+                });
+
+                console.log(`✅ Cow list dropdown updated with ${cows.length} cows`);
+
+                // Restore per-cow prefs after list renders
+                await window.restorePrefs?.();
+
+            } catch (error) {
+                console.error('Error updating cow list dropdown:', error);
+            }
+        };
+
+        // Initialize cow list dropdown on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Wait a bit for farms to load first
+            setTimeout(() => {
+                if (typeof window.updateCowListDropdown === 'function') {
+                    window.updateCowListDropdown();
+                }
+            }, 1000);
+        });
+
+        // ── Persistent preferences ────────────────────────────────────────────
+        const PREFS_URL = '/api/auth/preferences';
+
+        function getAuthHeaders() {
+            return { 'Authorization': `Bearer ${localStorage.getItem('authToken')}`, 'Content-Type': 'application/json' };
+        }
+
+        function collectPrefs() {
+            const cowVisibility = {}, cowAlarm = {}, cowMarker = {};
+            document.querySelectorAll('#cowDropdown .cow-item').forEach(item => {
+                const checks = item.querySelectorAll('input[type="checkbox"]');
+                const onchange0 = checks[0]?.getAttribute('onchange') || '';
+                const token = (onchange0.match(/'([^']+)'/) || [])[1];
+                if (token) {
+                    cowVisibility[token] = checks[0]?.checked ?? true;
+                    cowAlarm[token]      = checks[1]?.checked ?? false;
+                    cowMarker[token]     = checks[2]?.checked ?? false;
+                }
+            });
+            return {
+                selectedFarmToken: window.selectedFarmToken || null,
+                showFarmMarkers:   document.getElementById('toggleFarmMarkers')?.checked ?? true,
+                showFences:        document.getElementById('toggleFences')?.checked ?? true,
+                showCowNames:      document.getElementById('toggleCowNameDisplay')?.checked ?? false,
+                audioEnabled:      alarmState.audioEnabled || alarmState._audioWasEnabled || false,
+                cowVisibility, cowAlarm, cowMarker
+            };
+        }
+
+        let _prefsSaveTimer = null;
+        let _latestPrefs = null;      // Live cache — updated on every successful save
+        let _prefsRestoredFull = false; // True once toggles + farm have been restored
+        window._restoringPrefs = false;
+        window._prefsRestored = false;
+        window.savePrefs = function() {
+            if (window._restoringPrefs || !window._prefsRestored) return;
+            clearTimeout(_prefsSaveTimer);
+            _prefsSaveTimer = setTimeout(async () => {
+                // Re-check guard: a restore might have started while the timer was pending
+                if (window._restoringPrefs) return;
+                try {
+                    const snapshot = collectPrefs();
+                    await fetch(PREFS_URL, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ prefs: snapshot }) });
+                    _latestPrefs = snapshot; // Keep live cache in sync with DB
+                } catch(e) { console.warn('savePrefs failed:', e); }
+            }, 600);
+        };
+
+        window.restorePrefs = async function() {
+            try {
+                window._restoringPrefs = true;
+                // Use live cache if available (reflects latest saves); fall back to initial fetch
+                const prefs = _latestPrefs || await _page6PrefsFetch;
+                if (!prefs || Object.keys(prefs).length === 0) { window._restoringPrefs = false; return; }
+
+                // Seed the live cache from the initial fetch on first call
+                if (!_latestPrefs) _latestPrefs = prefs;
+
+                // Full restore (farm selection + map toggles) — only on first call.
+                // Subsequent calls (e.g. cow-list rebuild after farm switch) skip this to
+                // avoid overwriting user changes with the stale initial-fetch values.
+                if (!_prefsRestoredFull) {
+                    _prefsRestoredFull = true;
+
+                    if (prefs.selectedFarmToken !== undefined) {
+                        const alreadySelected = window.selectedFarmToken === prefs.selectedFarmToken ||
+                            (prefs.selectedFarmToken === null && window.selectedFarmToken === null);
+                        if (!alreadySelected) {
+                            if (prefs.selectedFarmToken === null) {
+                                window.selectFarmForTracking?.('all');
+                            } else {
+                                const farm = (window.farmsData || []).find(f => f.farm_token === prefs.selectedFarmToken);
+                                if (farm) window.selectFarmForTracking?.(farm.farm_name);
+                            }
+                        }
+                    }
+
+                    if (prefs.showFarmMarkers !== undefined) {
+                        const el = document.getElementById('toggleFarmMarkers');
+                        if (el) { el.checked = prefs.showFarmMarkers; window.toggleFarmMarkersVisibility(prefs.showFarmMarkers); }
+                    }
+                    if (prefs.showFences !== undefined) {
+                        const el = document.getElementById('toggleFences');
+                        if (el) { el.checked = prefs.showFences; window.toggleFencesVisibility(prefs.showFences); }
+                    }
+                    if (prefs.showCowNames !== undefined) {
+                        const el = document.getElementById('toggleCowNameDisplay');
+                        if (el) { el.checked = prefs.showCowNames; window.toggleCowNameDisplayMode(prefs.showCowNames); }
+                    }
+                }
+
+                // Per-cow checkboxes — always restore (cows are rebuilt on every farm switch)
+                document.querySelectorAll('#cowDropdown .cow-item').forEach(item => {
+                    const checks = item.querySelectorAll('input[type="checkbox"]');
+                    const onchange0 = checks[0]?.getAttribute('onchange') || '';
+                    const token = (onchange0.match(/'([^']+)'/) || [])[1];
+                    if (!token) return;
+                    if (prefs.cowVisibility?.[token] !== undefined && checks[0]) {
+                        checks[0].checked = prefs.cowVisibility[token];
+                        window.toggleCowVisibility(token, checks[0]);
+                    }
+                    if (prefs.cowAlarm?.[token] !== undefined && checks[1]) {
+                        checks[1].checked = prefs.cowAlarm[token];
+                    }
+                    if (prefs.cowMarker?.[token] !== undefined && checks[2]) {
+                        checks[2].checked = prefs.cowMarker[token];
+                        window.toggleMarker(token, checks[2]);
+                    }
+                });
+
+                console.log('✅ Preferences restored');
+            } catch(e) { console.warn('restorePrefs failed:', e); }
+            finally {
+                window._restoringPrefs = false;
+                window._prefsRestored = true;
+            }
+        };
+        // ─────────────────────────────────────────────────────────────────────
+
+        /**
+         * Toggle dropdown visibility
+         */
+        window.toggleDropdown = function(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            if (dropdown) {
+                const isVisible = dropdown.style.display === 'block';
+                dropdown.style.display = isVisible ? 'none' : 'block';
+            }
+        };
+
+        /**
+         * Toggle cow visibility on map
+         */
+        window.toggleCowVisibility = function(cowToken, checkbox) {
+            const cowMarker = window.currentCows?.find(marker =>
+                marker.cowData && marker.cowData.cow_token === cowToken
+            );
+
+            if (cowMarker) {
+                if (checkbox.checked) {
+                    cowMarker.addTo(map);
+                    console.log(`✅ Cow ${cowToken} is now visible on map`);
+                } else {
+                    map.removeLayer(cowMarker);
+                    console.log(`❌ Cow ${cowToken} is now hidden from map`);
+                }
+            }
+            window.savePrefs?.();
+        };
+
+        /**
+         * Toggle alarm for cow
+         */
+        window.toggleAlarm = function(cowToken, checkbox) {
+            console.log(`${checkbox.checked ? '🔔' : '🔕'} Alarm ${checkbox.checked ? 'enabled' : 'disabled'} for cow ${cowToken}`);
+            window.savePrefs?.();
+        };
+
+        // ── Fence thickness slider ────────────────────────────────────────────
+        let _thicknessDebounce = null;
+        window.onThicknessInput = function(val) {
+            const v = parseFloat(val);
+            document.getElementById('fenceThicknessValue').textContent = v.toFixed(1) + 'm';
+            if (window.currentFences) {
+                window.currentFences.forEach(f => {
+                    f.fenceThickness = v;
+                    window.updateLine1Layer?.(f, v);
+                });
+            }
+            clearTimeout(_thicknessDebounce);
+            _thicknessDebounce = setTimeout(() => saveThicknessToDB(v), 600);
+        };
+
+        async function saveThicknessToDB(thickness) {
+            const fence = window.currentFences?.find(f => f.fenceToken);
+            if (!fence?.fenceToken) return;
+            try {
+                await fetch(`/api/farms/fences/${fence.fenceToken}/thickness`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
+                    body: JSON.stringify({ thickness })
+                });
+            } catch (e) { console.warn('[Thickness] Save failed:', e.message); }
+        }
+
+        function syncThicknessSlider() {
+            const fence = window.currentFences?.find(f => f.fenceToken);
+            const bar = document.getElementById('fenceThicknessBar');
+            if (!fence) { if (bar) bar.style.display = 'none'; return; }
+            const t = fence.fenceThickness ?? 0.5;
+            const slider = document.getElementById('fenceThicknessSlider');
+            if (slider) slider.value = t;
+            const valEl = document.getElementById('fenceThicknessValue');
+            if (valEl) valEl.textContent = t.toFixed(1) + 'm';
+            if (bar) bar.style.display = 'flex';
+        }
+
+        window.onFencesReady = syncThicknessSlider;
+        // ─────────────────────────────────────────────────────────────────────
+
+        /**
+         * Toggle marker for cow
+         */
+        window.toggleMarker = function(cowToken, checkbox) {
+            const cowMarker = window.currentCows?.find(marker =>
+                marker.cowData && marker.cowData.cow_token === cowToken
+            );
+
+            if (cowMarker) {
+                if (checkbox.checked) {
+                    cowMarker.setOpacity(1);
+                    console.log(`📍 Marker enabled for cow ${cowToken}`);
+                } else {
+                    cowMarker.setOpacity(0.3);
+                    console.log(`📍 Marker dimmed for cow ${cowToken}`);
+                }
+            }
+            window.savePrefs?.();
+        };
+    </script>
+</body>
+</html>

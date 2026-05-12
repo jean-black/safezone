@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone - Use Device GPS</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+</head>
+<body class="farm-setup-page">
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+        </div>
+
+        <div class="header-right">
+            <button class="header-btn" data-nav="notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge">0</span>
+            </button>
+            <button class="header-btn" data-nav="profile">
+                <span class="user-icon">👤</span>
+            </button>
+        </div>
+
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="/html/page2_dashboard.html">Dashboard</a>
+            <a href="/html/page13_farm-management.html">Farm Management</a>
+            <a href="/html/page8_farm-information.html">Farm Information</a>
+            <a href="/html/page14_farm-and-fence.html">Farm and Fence</a>
+            <a href="/html/page6_real-time-tracking.html">Real-time Tracking</a>
+            <a href="/html/page10_customize-alerts.html">Customize Alerts</a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="farm-name-input">
+            <h1>Register New Farm</h1>
+            <p style="color: #999; margin-bottom: 30px;">WiFi positioning will be used to detect the farm location</p>
+
+            <div class="farm-input" id="farmInputSection">
+                <h2>Name Your Farm</h2>
+                <input type="text" id="farmNameField" placeholder="Enter farm name (optional - auto-generated if empty)">
+                <p style="color: #999; font-size: 0.9rem; margin: 10px 0;">If left empty, the system will generate a name like "farm1", "farm2", etc.</p>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="window.location.href='/html/page14_farm-and-fence.html'">Back</button>
+                    <button class="btn btn-primary" id="registerBtn">Register Farm</button>
+                </div>
+            </div>
+
+            <div class="gps-status" id="gpsStatus" style="display: none; margin-top: 30px;">
+                <p id="statusMessage">Detecting GPS location...</p>
+            </div>
+
+            <div class="continue-section" id="continueSection" style="display: none; margin-top: 30px;">
+                <div class="farm-registered-info">
+                    <h3 style="color: #10b981;">✓ Farm Registered Successfully!</h3>
+                    <p id="registeredFarmName"></p>
+                    <p id="registeredFarmGPS" style="color: #999; font-size: 0.9rem;"></p>
+                </div>
+                <button class="btn btn-success" id="continueBtn">Continue to Fence Editor</button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <script src="../js/app.js"></script>
+    <script>
+        // Use unique variable names to avoid conflicts with app.js
+        let farmGPSLocation = null;
+        let registeredFarmNameLocal = null;
+        let registeredFarmTokenLocal = null;
+        let farmsCountLocal = 0;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Load farms count for default naming
+            await loadFarmsCountLocal();
+
+            // Attach event listeners
+            document.getElementById('registerBtn').addEventListener('click', registerFarmLocal);
+            document.getElementById('continueBtn').addEventListener('click', continueToFenceEditorLocal);
+        });
+
+        async function loadFarmsCountLocal() {
+            try {
+                const authToken = localStorage.getItem('authToken');
+                const response = await fetch('/api/farms', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    farmsCountLocal = data.farms ? data.farms.length : 0;
+                } else {
+                    farmsCountLocal = 0;
+                }
+            } catch (error) {
+                console.error('Error loading farms count:', error);
+                farmsCountLocal = 0;
+            }
+        }
+
+        async function registerFarmLocal() {
+            const registerBtn = document.getElementById('registerBtn');
+            const farmNameField = document.getElementById('farmNameField');
+            const gpsStatus = document.getElementById('gpsStatus');
+            const statusMessage = document.getElementById('statusMessage');
+
+            // Disable button and show status
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Registering...';
+            gpsStatus.style.display = 'block';
+            statusMessage.innerHTML = '<p style="color: #fbbf24;">Detecting GPS location via WiFi positioning...</p>';
+
+            try {
+                // Get WiFi/GPS positioning
+                farmGPSLocation = await getCurrentLocationLocal();
+
+                if (!farmGPSLocation || farmGPSLocation === '0,0') {
+                    statusMessage.innerHTML = '<p style="color: #ef4444;">✗ GPS detection failed. Please enable location services and try again.</p>';
+                    registerBtn.disabled = false;
+                    registerBtn.textContent = 'Register Farm';
+                    return;
+                }
+
+                // Get farm name or generate default
+                let farmName = farmNameField.value.trim();
+                if (!farmName) {
+                    farmName = `farm${farmsCountLocal + 1}`;
+                }
+
+                statusMessage.innerHTML = `
+                    <p style="color: #10b981;">✓ GPS detected successfully!</p>
+                    <p style="color: #fbbf24;">Creating farm in database...</p>
+                `;
+
+                // Create farm in database
+                const authToken = localStorage.getItem('authToken');
+                const createResponse = await fetch('/api/farms', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        farmName: farmName,
+                        gps: farmGPSLocation,
+                        allowRename: false
+                    })
+                });
+
+                const createData = await createResponse.json();
+
+                if (createResponse.status === 409) {
+                    // Duplicate name - ask user
+                    const useSuggested = confirm(
+                        `Farm name "${createData.originalName}" already exists.\n\n` +
+                        `Do you want to use "${createData.suggestedName}" instead?\n\n` +
+                        `Click OK to use "${createData.suggestedName}"\n` +
+                        `Click Cancel to enter a different name`
+                    );
+
+                    if (useSuggested) {
+                        // Retry with allowRename
+                        const retryResponse = await fetch('/api/farms', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${authToken}`
+                            },
+                            body: JSON.stringify({
+                                farmName: createData.originalName,
+                                gps: farmGPSLocation,
+                                allowRename: true
+                            })
+                        });
+
+                        const retryData = await retryResponse.json();
+                        if (retryData.success) {
+                            registeredFarmNameLocal = retryData.farm_id || createData.suggestedName;
+                            registeredFarmTokenLocal = retryData.farm_token;
+                        } else {
+                            throw new Error('Failed to create farm with suggested name');
+                        }
+                    } else {
+                        // User cancelled - re-enable button
+                        registerBtn.disabled = false;
+                        registerBtn.textContent = 'Register Farm';
+                        gpsStatus.style.display = 'none';
+                        return;
+                    }
+                } else if (createData.success) {
+                    registeredFarmNameLocal = createData.farm_id || farmName;
+                    registeredFarmTokenLocal = createData.farm_token;
+                } else {
+                    throw new Error(createData.error || 'Failed to create farm');
+                }
+
+                statusMessage.innerHTML = `
+                    <p style="color: #10b981;">✓ Farm created successfully!</p>
+                    <p style="color: #999; font-size: 0.9rem;">Location: ${farmGPSLocation}</p>
+                `;
+
+                // Show success and continue button
+                setTimeout(() => {
+                    document.getElementById('farmInputSection').style.display = 'none';
+                    document.getElementById('gpsStatus').style.display = 'none';
+                    document.getElementById('registeredFarmName').textContent = `Farm Name: ${registeredFarmNameLocal}`;
+                    document.getElementById('registeredFarmGPS').textContent = `Location: ${farmGPSLocation}`;
+                    document.getElementById('continueSection').style.display = 'block';
+                }, 1000);
+
+            } catch (error) {
+                console.error('Registration error:', error);
+                statusMessage.innerHTML = '<p style="color: #ef4444;">✗ Registration failed. Please try again.</p>';
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Register Farm';
+            }
+        }
+
+        function continueToFenceEditorLocal() {
+            // Store farm data in sessionStorage to pass to fence editor
+            sessionStorage.setItem('farmSetupMethod', '1');
+            sessionStorage.setItem('farmGPS', farmGPSLocation);
+            sessionStorage.setItem('farmName', registeredFarmNameLocal);
+            sessionStorage.setItem('farmToken', registeredFarmTokenLocal);
+
+            // Redirect to fence editor
+            window.location.href = '/html/page5_editing-fence.html';
+        }
+
+        async function getCurrentLocationLocal() {
+            return new Promise((resolve, reject) => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            resolve(`${position.coords.latitude},${position.coords.longitude}`);
+                        },
+                        (error) => {
+                            console.error('Geolocation error:', error);
+                            reject(error);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        }
+                    );
+                } else {
+                    reject(new Error('Geolocation not supported'));
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .farm-registered-info {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #10b981;
+            margin-bottom: 20px;
+        }
+
+        .farm-registered-info h3 {
+            margin-top: 0;
+        }
+
+        .farm-registered-info p {
+            margin: 10px 0;
+        }
+
+        .gps-status {
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 2px solid #333;
+        }
+
+        #registerBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</body>
+</html>

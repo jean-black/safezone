@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeZone Dev - Cow Recovery</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" type="image/png" href="../images/safezone icone.png">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        /* Page18-specific overrides only - use styles.css for base */
+
+        /* Code Entry Screen */
+        .code-entry-screen {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            min-height: 60vh;
+        }
+
+        .code-entry-screen.active {
+            display: flex;
+        }
+
+        .code-entry-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .code-entry-card h1 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .code-entry-card p {
+            color: #7f8c8d;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .code-input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .code-input-group label {
+            display: block;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .code-input-group input {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1.5rem;
+            text-align: center;
+            letter-spacing: 0.5rem;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+
+        .code-input-group input:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .code-error {
+            color: #e74c3c;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        /* Recovery Interface */
+        .recovery-interface {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .recovery-interface.active {
+            display: flex;
+        }
+
+        /* Recovery header styles */
+        .recovery-header {
+            background: var(--dark-blue);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--red-primary);
+            margin-bottom: 2rem;
+        }
+
+        .recovery-code-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .recovery-code-display {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .recovery-code-display h3 {
+            margin: 0;
+            color: var(--white);
+            font-size: 1.25rem;
+        }
+
+        .code-badge {
+            background: var(--red-primary);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.25rem;
+            font-family: monospace;
+        }
+
+        .recovery-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* Use tracking-layout from styles.css but adjust for recovery panel */
+        .recovery-layout {
+            display: flex;
+            gap: 1rem;
+            height: 600px;
+        }
+
+        /* Map container */
+        .map-container {
+            flex: 1;
+            background-color: var(--dark-blue);
+            border-radius: 12px;
+            border: 1px solid var(--red-primary);
+            overflow: hidden;
+        }
+
+        /* Recovery details panel (same as alarm-panel) */
+        .realtime-details-panel {
+            width: 300px;
+            background-color: var(--dark-blue);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--red-primary);
+            overflow-y: auto;
+        }
+
+        .realtime-details-panel h3 {
+            margin-bottom: 1rem;
+            color: var(--white);
+            text-align: center;
+        }
+
+        .details-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .details-section h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 11px;
+            font-weight: bold;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .details-section:first-child h4 {
+            color: #3b82f6; /* Blue for Agent */
+        }
+
+        .details-section:last-child h4 {
+            color: #f59e0b; /* Orange for Virtual Cow */
+        }
+
+        .detail-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #bdc3c7;
+        }
+
+        .detail-item.zone2 {
+            border-left-color: #f39c12;
+        }
+
+        .detail-item.zone3 {
+            border-left-color: #e74c3c;
+        }
+
+        .detail-item.zone1 {
+            border-left-color: #27ae60;
+        }
+
+        .detail-item .cow-name {
+            font-weight: 400;
+            font-family: 'Fort', sans-serif;
+            color: var(--white);
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .detail-item .cow-info {
+            font-size: 0.8rem;
+            font-family: 'Fort', sans-serif;
+            color: #bdc3c7;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-indicator.connected {
+            background: #27ae60;
+            box-shadow: 0 0 8px rgba(39, 174, 96, 0.6);
+        }
+
+        .status-indicator.disconnected {
+            background: #95a5a6;
+        }
+
+        #recoveryMap {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Completion/Cancelled Screens */
+        .completion-screen,
+        .cancelled-screen {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            min-height: 60vh;
+        }
+
+        .completion-screen.active,
+        .cancelled-screen.active {
+            display: flex;
+        }
+
+        .completion-card,
+        .cancelled-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .completion-card h1 {
+            color: #27ae60;
+            margin-bottom: 1rem;
+        }
+
+        .cancelled-card h1 {
+            color: #e74c3c;
+            margin-bottom: 1rem;
+        }
+
+        .completion-card p,
+        .cancelled-card p {
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+
+        /* Speed Controls */
+        .speed-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            align-items: center;
+            margin-left: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.25rem 0.5rem;
+            font-size: 1rem;
+            min-width: 40px;
+            height: 30px;
+            background: var(--dark-blue);
+            color: var(--white);
+            border: 1px solid var(--red-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-small:hover {
+            background: var(--red-primary);
+            transform: scale(1.05);
+        }
+
+        .speed-display {
+            font-size: 0.75rem;
+            color: var(--white);
+            font-weight: 600;
+            margin-top: 0.25rem;
+            padding: 0.125rem 0.25rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            min-width: 35px;
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .recovery-layout {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .realtime-details-panel {
+                width: 100%;
+                max-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body class="recovery-page">
+    <header class="header">
+        <div class="header-left">
+            <img src="/images/safezone icone.png" alt="SafeZone Logo" class="header-logo white-fill">
+            <h2>Cow Recovery</h2>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Code Entry Screen (for agents) -->
+        <div class="code-entry-screen" id="codeEntryScreen">
+            <div class="code-entry-card">
+                <h1>Enter Recovery Code</h1>
+                <p>Enter the 4-digit code provided by the cow owner to access the recovery session.</p>
+
+                <form onsubmit="validateAndLoadRecovery(event)">
+                    <div class="code-input-group">
+                        <label for="recoveryCodeInput">Recovery Code</label>
+                        <input
+                            type="text"
+                            id="recoveryCodeInput"
+                            maxlength="4"
+                            pattern="[0-9]{4}"
+                            placeholder="----"
+                            required
+                            autocomplete="off"
+                        >
+                        <div class="code-error" id="codeError">Invalid recovery code. Please try again.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        Access Recovery
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Recovery Interface (for owner and accepted agent) -->
+        <div class="recovery-interface" id="recoveryInterface">
+            <!-- Recovery Header with Code and Actions -->
+            <div class="recovery-header" id="ownerControls">
+                <div class="recovery-code-section">
+                    <div class="recovery-code-display">
+                        <h3>Recovery Code:</h3>
+                        <div class="code-badge" id="recoveryCodeDisplay">----</div>
+                    </div>
+
+                    <div class="recovery-actions">
+                        <button class="btn btn-secondary" onclick="shareRecoveryLink()">
+                            📋 Share Link
+                        </button>
+                        <button class="btn btn-danger" onclick="cancelRecovery()">
+                            ✕ Cancel Recovery
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tracking Controls (like page19) -->
+            <div class="tracking-controls">
+                <div class="control-group">
+                    <button class="btn btn-secondary" onclick="autoFocusFence()">
+                        Auto Focus Fence
+                    </button>
+
+                    <button class="btn btn-secondary" onclick="autoFocusAll()">
+                        Auto Focus All
+                    </button>
+
+                    <button class="btn btn-primary" onclick="centerOnAgent()">
+                        Center on Agent
+                    </button>
+
+                    <div class="speed-controls">
+                        <button class="btn btn-small" onclick="increaseAgentSpeed()" title="Increase speed">
+                            🔼
+                        </button>
+                        <button class="btn btn-small" onclick="decreaseAgentSpeed()" title="Decrease speed">
+                            🔽
+                        </button>
+                        <div class="speed-display" id="speedDisplay">10km/h</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Recovery Layout -->
+            <div class="recovery-layout">
+                <!-- Map Container -->
+                <div class="map-container">
+                    <div id="recoveryMap"></div>
+                </div>
+
+                <!-- Real-time Details Panel -->
+                <div class="realtime-details-panel">
+                    <h3>Real-time Details</h3>
+
+                    <!-- Agent Section -->
+                    <div class="details-section">
+                        <h4>Agent</h4>
+                        <div id="agentDetails">
+                            <div class="detail-item">
+                                <div class="cow-info">
+                                    <span class="status-indicator disconnected"></span>
+                                    Waiting for agent to connect...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Virtual Cows Section -->
+                    <div class="details-section">
+                        <h4>Virtual Cow</h4>
+                        <div id="cowDetails">
+                            <div class="detail-item">
+                                <div class="cow-info">Loading cows...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completion Screen -->
+        <div class="completion-screen" id="completionScreen">
+            <div class="completion-card">
+                <h1>✓ Recovery Completed!</h1>
+                <p>All cows have been successfully returned to the fence.</p>
+                <p>The recovery session will close automatically.</p>
+            </div>
+        </div>
+
+        <!-- Cancelled Screen -->
+        <div class="cancelled-screen" id="cancelledScreen">
+            <div class="cancelled-card">
+                <h1>✕ Recovery Cancelled</h1>
+                <p>The recovery session has been cancelled by the owner.</p>
+                <p>Thank you for your time.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p><strong>SafeZone</strong> - Developed by Jean Claude & Samuel</p>
+            <p>Near East University - 2025-2026 - v1.0.0</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="../js/app.js"></script>
+
+    <script>
+        // ============================================
+        // GLOBAL VARIABLES
+        // ============================================
+
+        let recoveryMap = null;
+        let recoverySession = null;
+        let agentMarker = null;
+        let cowMarkers = {};
+        let fencePolygons = [];
+        let socket = null;
+        let isOwner = false;
+        let autoDisconnectTimer = null;
+        let detailsUpdateInterval = null;
+        let virtualAgent = null;
+        let agentUpdateInterval = null;
+        // autoFocusMode is declared in app.js, just reset it here
+        autoFocusMode = 'none'; // Auto-focus mode: 'none', 'fence', 'all', 'agent'
+
+        // Get auth token from localStorage (JWT token stored during login)
+        const virtualAuthToken = localStorage.getItem('authToken');
+        const virtualApiBase = window.location.origin + '/api';
+
+        // Recovery configuration
+        const RECOVERY_CONFIG = {
+            minCows: 1,
+            maxCows: 3,
+            singleCowChance: 0.5,  // 50% chance to recover just 1 cow
+            waitBetweenRecoveries: 5000,  // 5 seconds idle after each batch
+            agentSpeed: 10  // km/h
+        };
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Page 18 - Recovery page loaded');
+
+            // Check URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            const recoveryId = urlParams.get('recoveryId');
+            const recoveryCode = urlParams.get('code');
+
+            if (recoveryId) {
+                // Owner view - load by recovery ID
+                isOwner = true;
+                await loadRecoveryByRecoveryId(recoveryId);
+            } else if (recoveryCode) {
+                // Agent view - validate code and load
+                await loadRecoveryByCode(recoveryCode);
+            } else {
+                // No params - show code entry
+                showCodeEntryScreen();
+            }
+        });
+
+        // ============================================
+        // SCREEN MANAGEMENT
+        // ============================================
+
+        function showCodeEntryScreen() {
+            document.getElementById('codeEntryScreen').classList.add('active');
+            document.getElementById('recoveryInterface').classList.remove('active');
+            document.getElementById('completionScreen').classList.remove('active');
+            document.getElementById('cancelledScreen').classList.remove('active');
+        }
+
+        function showRecoveryInterface() {
+            document.getElementById('codeEntryScreen').classList.remove('active');
+            document.getElementById('recoveryInterface').classList.add('active');
+            document.getElementById('completionScreen').classList.remove('active');
+            document.getElementById('cancelledScreen').classList.remove('active');
+
+            // Hide owner controls if not owner
+            if (!isOwner) {
+                document.getElementById('ownerControls').style.display = 'none';
+            }
+        }
+
+        function showCompletionScreen() {
+            document.getElementById('codeEntryScreen').classList.remove('active');
+            document.getElementById('recoveryInterface').classList.remove('active');
+            document.getElementById('completionScreen').classList.add('active');
+            document.getElementById('cancelledScreen').classList.remove('active');
+        }
+
+        function showCancelledScreen() {
+            document.getElementById('codeEntryScreen').classList.remove('active');
+            document.getElementById('recoveryInterface').classList.remove('active');
+            document.getElementById('completionScreen').classList.remove('active');
+            document.getElementById('cancelledScreen').classList.add('active');
+        }
+
+        // ============================================
+        // LOAD RECOVERY SESSIONS
+        // ============================================
+
+        async function validateAndLoadRecovery(event) {
+            event.preventDefault();
+
+            const code = document.getElementById('recoveryCodeInput').value;
+            const errorDiv = document.getElementById('codeError');
+
+            errorDiv.style.display = 'none';
+
+            await loadRecoveryByCode(code);
+        }
+
+        async function loadRecoveryByCode(code) {
+            try {
+                const response = await fetch(`${virtualApiBase}/recovery/validate/${code}`);
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    document.getElementById('codeError').textContent = error.error || 'Invalid code';
+                    document.getElementById('codeError').style.display = 'block';
+                    return;
+                }
+
+                const data = await response.json();
+                recoverySession = data.recovery;
+
+                // Initialize recovery interface
+                await initializeRecoveryInterface();
+
+            } catch (error) {
+                console.error('Error validating recovery code:', error);
+                document.getElementById('codeError').textContent = 'Error connecting to server';
+                document.getElementById('codeError').style.display = 'block';
+            }
+        }
+
+        async function loadRecoveryByRecoveryId(recoveryId) {
+            try {
+                console.log(`📡 Loading recovery by ID: ${recoveryId}`);
+                const response = await fetch(`${virtualApiBase}/recovery/${recoveryId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${virtualAuthToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error(`❌ Failed to load recovery: ${response.status} ${response.statusText}`);
+                    alert('Failed to load recovery session');
+                    return;
+                }
+
+                const data = await response.json();
+                recoverySession = data.recovery;
+
+                console.log('Recovery session loaded:', {
+                    recoveryId: recoverySession.recovery_id,
+                    cows: recoverySession.cows?.length || 0,
+                    fences: recoverySession.fences?.length || 0
+                });
+
+                // Log detailed cow data
+                if (recoverySession.cows && recoverySession.cows.length > 0) {
+                    console.log('Cow data received from server:');
+                    recoverySession.cows.forEach((cow, index) => {
+                        console.log(`  Cow ${index + 1}:`, {
+                            name: cow.cow_name,
+                            token: cow.cow_token,
+                            lat: cow.gps_latitude,
+                            lng: cow.gps_longitude,
+                            state: cow.state_fence,
+                            collar: cow.collar_id
+                        });
+                    });
+                } else {
+                    console.warn('WARNING: No cows in recovery session!');
+                }
+
+                // Initialize recovery interface
+                await initializeRecoveryInterface();
+
+            } catch (error) {
+                console.error('Error loading recovery:', error);
+                alert('Error loading recovery session');
+            }
+        }
+
+        // ============================================
+        // INITIALIZE RECOVERY INTERFACE
+        // ============================================
+
+        async function initializeRecoveryInterface() {
+            if (!recoverySession) return;
+
+            console.log('Initializing recovery interface:', recoverySession);
+
+            // Show recovery interface
+            showRecoveryInterface();
+
+            // Display recovery code
+            document.getElementById('recoveryCodeDisplay').textContent = recoverySession.recovery_code || '----';
+
+            // Initialize map
+            initializeRecoveryMap();
+
+            // Wait for fences to load, then start virtual agent AI
+            setTimeout(() => {
+                // Load and display cows
+                updateCowMarkers();
+
+                // Auto-focus on fence initially
+                setTimeout(() => {
+                    autoFocusFence();
+                    console.log('Initial auto-focus on fence completed');
+                }, 500);
+
+                // Start virtual agent AI (only for developer view)
+                if (isOwner) {
+                    startVirtualAgentAI();
+
+                    // Start real-time details update AFTER agent is initialized
+                    setTimeout(() => {
+                        startDetailsUpdate();
+                    }, 500);
+                } else {
+                    // For non-owners, start details update immediately
+                    startDetailsUpdate();
+                }
+            }, 1000);
+
+            // Initialize WebSocket
+            initializeWebSocket();
+
+            // Start auto-disconnect checker
+            startAutoDisconnectChecker();
+        }
+
+        // ============================================
+        // MAP INITIALIZATION
+        // ============================================
+
+        function initializeRecoveryMap() {
+            if (recoveryMap) {
+                recoveryMap.remove();
+            }
+
+            console.log('Initializing recovery map...');
+            recoveryMap = L.map('recoveryMap').setView([35.1856, 33.3823], 13);
+
+            // Add dark tile layer to match page6 theme
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                maxZoom: 20
+            }).addTo(recoveryMap);
+
+            console.log('Map initialized successfully');
+
+            // If we have cows, center map on first cow
+            if (recoverySession.cows && recoverySession.cows.length > 0) {
+                const firstCow = recoverySession.cows[0];
+                if (firstCow.gps_latitude && firstCow.gps_longitude) {
+                    console.log(`Centering map on first cow at ${firstCow.gps_latitude}, ${firstCow.gps_longitude}`);
+                    recoveryMap.setView([firstCow.gps_latitude, firstCow.gps_longitude], 15);
+                }
+            }
+
+            // Load fences on the map
+            loadFencesOnMap();
+        }
+
+        // ============================================
+        // FENCE LOADING
+        // ============================================
+
+        async function loadFencesOnMap() {
+            try {
+                // Use fences from recovery session data (already included in recovery response)
+                if (recoverySession && recoverySession.fences && Array.isArray(recoverySession.fences)) {
+                    recoverySession.fences.forEach(fence => {
+                        if (fence.fence_coordinate) {
+                            const coordinates = JSON.parse(fence.fence_coordinate);
+                            const latlngs = coordinates.map(coord => [coord.lat, coord.lng]);
+
+                            const polygon = L.polygon(latlngs, {
+                                color: '#dc2626',
+                                weight: 2,
+                                opacity: 0.8,
+                                fillColor: '#dc2626',
+                                fillOpacity: 0.1
+                            }).addTo(recoveryMap);
+
+                            polygon.bindPopup(`<strong>${fence.fence_name}</strong><br>Recovery Zone`);
+
+                            fencePolygons.push(polygon);
+                            window.currentFences = fencePolygons;
+                        }
+                    });
+
+                    console.log(`Loaded ${recoverySession.fences.length} fence(s) for recovery`);
+                } else {
+                    console.warn('No fences available in recovery session');
+                }
+            } catch (error) {
+                console.error('Error loading fences:', error);
+            }
+        }
+
+        // ============================================
+        // ZONE DETECTION
+        // ============================================
+
+        function getCowZone(cowPosition) {
+            if (!window.currentFences || window.currentFences.length === 0) {
+                return 'zone1';
+            }
+
+            const fencePolygon = window.currentFences[0];
+            if (!fencePolygon || !fencePolygon.getLatLngs) {
+                return 'zone1';
+            }
+
+            // Check if cow is inside fence (zone1)
+            const isInside = checkPointInPolygon(cowPosition, fencePolygon);
+
+            if (isInside) {
+                return 'zone1';
+            }
+
+            // Check distance from fence boundary
+            const distanceFromFence = calculateDistanceFromBoundary(cowPosition, fencePolygon);
+
+            // Zone2: 0-50 meters outside fence, Zone3: >50 meters
+            return distanceFromFence <= 50 ? 'zone2' : 'zone3';
+        }
+
+        function checkPointInPolygon(point, polygon) {
+            const latLngs = polygon.getLatLngs()[0];
+            let inside = false;
+            const x = point.lat, y = point.lng;
+
+            for (let i = 0, j = latLngs.length - 1; i < latLngs.length; j = i++) {
+                const xi = latLngs[i].lat, yi = latLngs[i].lng;
+                const xj = latLngs[j].lat, yj = latLngs[j].lng;
+
+                const intersect = ((yi > y) !== (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+
+            return inside;
+        }
+
+        function calculateDistanceFromBoundary(point, polygon) {
+            const latLngs = polygon.getLatLngs()[0];
+            let minDistance = Infinity;
+
+            for (let i = 0; i < latLngs.length; i++) {
+                const p1 = latLngs[i];
+                const p2 = latLngs[(i + 1) % latLngs.length];
+                const distance = distanceToSegment(point, p1, p2);
+                minDistance = Math.min(minDistance, distance);
+            }
+
+            return minDistance;
+        }
+
+        function distanceToSegment(point, lineStart, lineEnd) {
+            const A = point.lat - lineStart.lat;
+            const B = point.lng - lineStart.lng;
+            const C = lineEnd.lat - lineStart.lat;
+            const D = lineEnd.lng - lineStart.lng;
+
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            let param = lenSq !== 0 ? dot / lenSq : -1;
+
+            let xx, yy;
+            if (param < 0) {
+                xx = lineStart.lat;
+                yy = lineStart.lng;
+            } else if (param > 1) {
+                xx = lineEnd.lat;
+                yy = lineEnd.lng;
+            } else {
+                xx = lineStart.lat + param * C;
+                yy = lineStart.lng + param * D;
+            }
+
+            const dx = point.lat - xx;
+            const dy = point.lng - yy;
+            return Math.sqrt(dx * dx + dy * dy) * 111000; // degrees to meters
+        }
+
+        // ============================================
+        // VIRTUAL AGENT AI
+        // ============================================
+
+        class VirtualAgentAI {
+            constructor(agentPosition, targetCows, fence) {
+                this.position = agentPosition;
+                this.targets = targetCows;
+                this.fence = fence;
+                this.state = 'idle';  // 'idle' | 'moving_to_cow' | 'returning_cow' | 'waiting'
+                this.currentTarget = null;
+                this.recoveredCows = [];
+                this.remainingTargets = []; // Queue of cows still to visit
+                this.speed = RECOVERY_CONFIG.agentSpeed;
+            }
+
+            selectRandomTargets() {
+                const cowsOutside = this.targets.filter(cow =>
+                    cow.state_fence !== 'zone1'
+                );
+
+                console.log(`🔍 Agent scan: ${cowsOutside.length} cow(s) outside fence (total: ${this.targets.length})`);
+                if (cowsOutside.length === 0) {
+                    console.log('✅ All cows are safe inside the fence!');
+                    return [];
+                }
+
+                // Decide how many to recover
+                let numToRecover;
+                if (Math.random() < RECOVERY_CONFIG.singleCowChance) {
+                    numToRecover = 1;
+                } else {
+                    numToRecover = Math.min(
+                        Math.floor(Math.random() * RECOVERY_CONFIG.maxCows) + 1,
+                        cowsOutside.length
+                    );
+                }
+
+                // Randomly select cows (Fisher-Yates shuffle)
+                const shuffled = [...cowsOutside].sort(() => 0.5 - Math.random());
+                return shuffled.slice(0, numToRecover);
+            }
+
+            calculateDistance(lat1, lng1, lat2, lng2) {
+                const dx = lat2 - lat1;
+                const dy = lng2 - lng1;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            moveTowards(targetLat, targetLng) {
+                const distance = this.calculateDistance(
+                    this.position.lat, this.position.lng,
+                    targetLat, targetLng
+                );
+
+                if (distance < 0.00005) {  // ~5 meters threshold
+                    return { arrived: true, lat: targetLat, lng: targetLng };
+                }
+
+                // Calculate direction vector
+                const latDiff = targetLat - this.position.lat;
+                const lngDiff = targetLng - this.position.lng;
+
+                // Normalize and apply speed
+                const moveDistance = (this.speed / 3600) * 0.001;  // Convert km/h to degrees per second
+                const angle = Math.atan2(latDiff, lngDiff);
+
+                const newLat = this.position.lat + Math.sin(angle) * moveDistance;
+                const newLng = this.position.lng + Math.cos(angle) * moveDistance;
+
+                return { arrived: false, lat: newLat, lng: newLng };
+            }
+
+            calculateFenceCenter() {
+                if (!this.fence || !this.fence.getLatLngs) {
+                    return this.position;
+                }
+
+                const latLngs = this.fence.getLatLngs()[0];
+                let sumLat = 0, sumLng = 0;
+
+                latLngs.forEach(coord => {
+                    sumLat += coord.lat;
+                    sumLng += coord.lng;
+                });
+
+                return {
+                    lat: sumLat / latLngs.length,
+                    lng: sumLng / latLngs.length
+                };
+            }
+
+            allCowsInZone1() {
+                return this.recoveredCows.every(cow => cow.state_fence === 'zone1');
+            }
+
+            moveCowsWithAgent() {
+                this.recoveredCows.forEach(cow => {
+                    cow.gps_latitude = this.position.lat;
+                    cow.gps_longitude = this.position.lng;
+
+                    // Update zone
+                    const cowPosition = { lat: cow.gps_latitude, lng: cow.gps_longitude };
+                    cow.state_fence = getCowZone(cowPosition);
+
+                    console.log('\n📤 [Page18] EMITTING COW POSITION UPDATE');
+                    console.log('Cow:', cow.cow_name || cow.cow_token);
+                    console.log('Recovery ID:', recoverySession.recovery_id);
+                    console.log('Position:', `(${cow.gps_latitude}, ${cow.gps_longitude})`);
+                    console.log('Zone:', cow.state_fence);
+
+                    // Emit update via Socket.IO
+                    if (socket) {
+                        const updateData = {
+                            recoveryId: recoverySession.recovery_id,
+                            cowToken: cow.cow_token,
+                            latitude: cow.gps_latitude,
+                            longitude: cow.gps_longitude,
+                            zone: cow.state_fence
+                        };
+                        console.log('Socket.IO connected:', socket.connected);
+                        console.log('Emitting data:', JSON.stringify(updateData));
+                        socket.emit('recovery:cow-position', updateData);
+                        console.log('✅ Position update emitted');
+                    } else {
+                        console.error('❌ Socket.IO not connected');
+                    }
+                });
+            }
+
+            broadcastAgentUpdate() {
+                if (socket) {
+                    socket.emit('recovery:agent-position', {
+                        recoveryId: recoverySession.recovery_id,
+                        latitude: this.position.lat,
+                        longitude: this.position.lng
+                    });
+                }
+            }
+
+            update() {
+                switch(this.state) {
+                    case 'idle':
+                        // Select random cow(s) to recover
+                        const targets = this.selectRandomTargets();
+                        if (targets.length > 0) {
+                            this.remainingTargets = [...targets]; // Create queue of all targets
+                            this.recoveredCows = []; // Start with empty recovered list
+                            this.currentTarget = this.remainingTargets.shift(); // Get first cow
+                            this.state = 'moving_to_cow';
+
+                            // Switch to auto-focus all when agent starts moving (unless user changed it)
+                            if (autoFocusMode === 'fence') {
+                                autoFocusAll();
+                            }
+
+                            console.log(`🎯 Agent starting recovery of ${targets.length} cow(s)`);
+                            console.log(`📍 First target: ${this.currentTarget.cow_name || this.currentTarget.cow_token}`);
+                        }
+                        break;
+
+                    case 'moving_to_cow':
+                        // Move agent towards current cow
+                        const result = this.moveTowards(
+                            this.currentTarget.gps_latitude,
+                            this.currentTarget.gps_longitude
+                        );
+
+                        this.position.lat = result.lat;
+                        this.position.lng = result.lng;
+
+                        if (result.arrived) {
+                            // Agent reached this cow - add to recovered list
+                            this.recoveredCows.push(this.currentTarget);
+                            console.log(`✅ Agent reached cow: ${this.currentTarget.cow_name || this.currentTarget.cow_token}`);
+                            console.log(`📊 Recovered so far: ${this.recoveredCows.length} cow(s)`);
+
+                            // Check if there are more cows to visit
+                            if (this.remainingTargets.length > 0) {
+                                // Get next cow from queue
+                                this.currentTarget = this.remainingTargets.shift();
+                                console.log(`📍 Next target: ${this.currentTarget.cow_name || this.currentTarget.cow_token}`);
+                                console.log(`📋 Remaining: ${this.remainingTargets.length} cow(s)`);
+                                // Stay in 'moving_to_cow' state to visit next cow
+                            } else {
+                                // All cows visited - now return to fence
+                                console.log(`✓ All ${this.recoveredCows.length} cow(s) collected! Returning to fence...`);
+                                this.state = 'returning_cow';
+                            }
+                        }
+                        break;
+
+                    case 'returning_cow':
+                        // Move towards fence center
+                        const fenceCenter = this.calculateFenceCenter();
+                        const returnResult = this.moveTowards(fenceCenter.lat, fenceCenter.lng);
+
+                        this.position.lat = returnResult.lat;
+                        this.position.lng = returnResult.lng;
+
+                        // Move all recovered cows with agent
+                        this.moveCowsWithAgent();
+
+                        if (returnResult.arrived || this.allCowsInZone1()) {
+                            console.log(`✅ Successfully recovered ${this.recoveredCows.length} cow(s)! Waiting before next recovery...`);
+
+                            this.state = 'waiting';
+                            const cowsToRelease = this.recoveredCows;
+                            this.currentTarget = null;
+                            this.recoveredCows = [];
+
+                            // Wait before starting next recovery
+                            setTimeout(() => {
+                                this.state = 'idle';
+                            }, RECOVERY_CONFIG.waitBetweenRecoveries);
+                        }
+                        break;
+
+                    case 'waiting':
+                        // Do nothing, waiting for timeout to switch to idle
+                        break;
+                }
+
+                // Broadcast updates
+                this.broadcastAgentUpdate();
+            }
+        }
+
+        function startVirtualAgentAI() {
+            if (!window.currentFences || window.currentFences.length === 0) {
+                console.warn('Cannot start virtual agent: no fences loaded');
+                return;
+            }
+
+            // Initialize agent at fence center
+            const fenceCenter = calculateFenceCenter(window.currentFences[0]);
+
+            virtualAgent = new VirtualAgentAI(
+                { lat: fenceCenter.lat, lng: fenceCenter.lng },
+                recoverySession.cows,
+                window.currentFences[0]
+            );
+
+            // Place agent marker at starting position
+            updateAgentMarker(virtualAgent.position.lat, virtualAgent.position.lng);
+
+            // Update every 1 second
+            agentUpdateInterval = setInterval(() => {
+                // Update cow zones BEFORE agent makes decisions
+                updateCowMarkers();
+
+                // Now agent can make decisions based on current zones
+                virtualAgent.update();
+                updateAgentMarker(virtualAgent.position.lat, virtualAgent.position.lng);
+
+                // Apply auto-focus based on current mode
+                if (autoFocusMode === 'all') {
+                    // Auto-focus all: follow agent while keeping all elements in view
+                    autoFocusAll();
+                } else if (autoFocusMode === 'agent') {
+                    // Center on agent only: follow agent closely
+                    if (agentMarker) {
+                        const agentPos = agentMarker.getLatLng();
+                        recoveryMap.setView([agentPos.lat, agentPos.lng], 16, {
+                            animate: true,
+                            duration: 0.5
+                        });
+                    }
+                }
+                // If mode is 'fence' or 'none', don't auto-follow
+            }, 1000);
+
+            console.log('Virtual Agent AI started at fence center');
+
+            // Initialize speed display
+            updateSpeedDisplay();
+        }
+
+        function calculateFenceCenter(fence) {
+            if (!fence || !fence.getLatLngs) {
+                return { lat: 35.1856, lng: 33.3823 };
+            }
+
+            const latLngs = fence.getLatLngs()[0];
+            let sumLat = 0, sumLng = 0;
+
+            latLngs.forEach(coord => {
+                sumLat += coord.lat;
+                sumLng += coord.lng;
+            });
+
+            return {
+                lat: sumLat / latLngs.length,
+                lng: sumLng / latLngs.length
+            };
+        }
+
+        // ============================================
+        // COW MARKERS
+        // ============================================
+
+        function updateCowMarkers() {
+            if (!recoverySession || !recoverySession.cows) {
+                console.warn('WARNING: No recovery session or cows to display');
+                return;
+            }
+
+            console.log(`Updating ${recoverySession.cows.length} cow marker(s)`);
+
+            recoverySession.cows.forEach(cow => {
+                if (!cow.gps_latitude || !cow.gps_longitude) {
+                    console.warn(`WARNING: Cow ${cow.cow_name || cow.cow_token} has no GPS coordinates:`, {
+                        lat: cow.gps_latitude,
+                        lng: cow.gps_longitude,
+                        cow: cow
+                    });
+                    return;
+                }
+
+                // Calculate real-time zone (for tracking only)
+                const cowPosition = { lat: cow.gps_latitude, lng: cow.gps_longitude };
+                const zone = getCowZone(cowPosition);
+                cow.state_fence = zone; // Update cow's zone
+
+                // Fixed green color for all cow markers
+                const color = '#22c55e';  // Green (all cows)
+                const cowName = cow.cow_name || cow.cow_nickname || cow.collar_id;
+
+                if (cowMarkers[cow.cow_token]) {
+                    // Update existing marker position (color stays green)
+                    const oldPos = cowMarkers[cow.cow_token].getLatLng();
+                    const newLat = cow.gps_latitude;
+                    const newLng = cow.gps_longitude;
+
+                    if (Math.abs(oldPos.lat - newLat) > 0.00001 || Math.abs(oldPos.lng - newLng) > 0.00001) {
+                        console.log(`📍 Cow ${cowName} moved from ${oldPos.lat.toFixed(6)}, ${oldPos.lng.toFixed(6)} to ${newLat.toFixed(6)}, ${newLng.toFixed(6)}`);
+                        cowMarkers[cow.cow_token].setLatLng([newLat, newLng]);
+                    }
+                } else {
+                    // Create new marker with fixed green color
+                    const marker = L.marker([cow.gps_latitude, cow.gps_longitude], {
+                        icon: L.divIcon({
+                            className: 'custom-cow-marker',
+                            html: `<div style="background: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
+                            iconSize: [12, 12],
+                            iconAnchor: [6, 6]
+                        })
+                    }).addTo(recoveryMap);
+
+                    // Add permanent label above the marker (like page19)
+                    marker.bindTooltip(cowName, {
+                        permanent: true,
+                        direction: 'top',
+                        className: 'cow-name-label',
+                        offset: [0, -8]
+                    });
+
+                    const zoneText = zone === 'zone1' ? 'Inside Fence (Safe)' :
+                                    zone === 'zone2' ? 'Zone 2 (Warning: 0-50m)' :
+                                    'Zone 3 (Danger: >50m)';
+
+                    marker.bindPopup(`
+                        <strong>${cowName}</strong><br>
+                        Collar: ${cow.collar_id}<br>
+                        Status: ${zoneText}
+                    `);
+
+                    cowMarkers[cow.cow_token] = marker;
+                }
+            });
+        }
+
+        // ============================================
+        // AGENT MARKER
+        // ============================================
+
+        function updateAgentMarker(lat, lng) {
+            const agentName = recoverySession?.virtualAgentId || 'agent1';
+
+            if (agentMarker) {
+                agentMarker.setLatLng([lat, lng]);
+            } else {
+                agentMarker = L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        className: 'custom-agent-marker',
+                        html: `<div style="background: #3498db; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
+                        iconSize: [12, 12],
+                        iconAnchor: [6, 6]
+                    })
+                }).addTo(recoveryMap);
+
+                // Add permanent label above the marker (like page19)
+                agentMarker.bindTooltip(agentName, {
+                    permanent: true,
+                    direction: 'top',
+                    className: 'cow-name-label',
+                    offset: [0, -8]
+                });
+
+                agentMarker.bindPopup(`${agentName} Location`);
+            }
+        }
+
+        // ============================================
+        // REAL-TIME DETAILS UPDATE
+        // ============================================
+
+        function startDetailsUpdate() {
+            detailsUpdateInterval = setInterval(() => {
+                updateRealTimeDetails();
+            }, 1000);
+
+            // Initial update
+            updateRealTimeDetails();
+        }
+
+        // Calculate real distance in kilometers using Haversine formula
+        function calculateDistanceInKm(lat1, lng1, lat2, lng2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // Check if point is inside polygon (using coordinates array)
+        function isPointInPolygon(point, coordinates) {
+            let inside = false;
+            const x = point.lat, y = point.lng;
+
+            for (let i = 0, j = coordinates.length - 1; i < coordinates.length; j = i++) {
+                const xi = coordinates[i].lat, yi = coordinates[i].lng;
+                const xj = coordinates[j].lat, yj = coordinates[j].lng;
+
+                const intersect = ((yi > y) !== (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+
+            return inside;
+        }
+
+        // Calculate distance from point to nearest fence boundary
+        function getDistanceToFence(lat, lng) {
+            if (!window.currentFences || window.currentFences.length === 0) return null;
+
+            const fencePolygon = window.currentFences[0];
+            if (!fencePolygon || !fencePolygon.getLatLngs) return null;
+
+            const fenceCoordinates = fencePolygon.getLatLngs()[0];
+            if (!fenceCoordinates || fenceCoordinates.length === 0) return null;
+
+            let minDistance = Infinity;
+            for (let i = 0; i < fenceCoordinates.length; i++) {
+                const p1 = fenceCoordinates[i];
+                const dist = calculateDistanceInKm(lat, lng, p1.lat, p1.lng);
+                minDistance = Math.min(minDistance, dist);
+            }
+
+            return minDistance;
+        }
+
+        // Determine which zone a point is in
+        function getZoneForPoint(lat, lng) {
+            if (!window.currentFences || window.currentFences.length === 0) return 'zone1';
+
+            const fencePolygon = window.currentFences[0];
+            if (!fencePolygon || !fencePolygon.getLatLngs) return 'zone1';
+
+            // Get fence coordinates from Leaflet polygon
+            const fenceCoordinates = fencePolygon.getLatLngs()[0];
+            if (!fenceCoordinates || fenceCoordinates.length === 0) return 'zone1';
+
+            // Check if inside fence (zone1)
+            const point = {lat, lng};
+            const isInside = isPointInPolygon(point, fenceCoordinates);
+            if (isInside) return 'zone1';
+
+            // Calculate distance to fence boundary
+            const minDistance = getDistanceToFence(lat, lng);
+            if (minDistance === null) return 'zone1';
+
+            // Zone2 is 0-50m, Zone3 is >50m
+            return minDistance <= 0.05 ? 'zone2' : 'zone3';
+        }
+
+        function updateRealTimeDetails() {
+            // Update agent details
+            const agentDetailsDiv = document.getElementById('agentDetails');
+            if (agentDetailsDiv && agentMarker && virtualAgent) {
+                const agentPos = agentMarker.getLatLng();
+                const agentZone = getZoneForPoint(agentPos.lat, agentPos.lng);
+                const agentSpeed = virtualAgent.speed || RECOVERY_CONFIG.agentSpeed;
+                const agentName = recoverySession?.virtualAgentId || 'agent1';
+                const zoneText = agentZone === 'zone1' ? 'Zone1' :
+                                agentZone === 'zone2' ? 'Zone2' :
+                                agentZone === 'zone3' ? 'Zone3' : 'Unknown';
+
+                // Calculate distance to fence
+                let fenceDistanceText = '-';
+                if (agentZone !== 'zone1') {
+                    const fenceDist = getDistanceToFence(agentPos.lat, agentPos.lng);
+                    if (fenceDist !== null) {
+                        fenceDistanceText = fenceDist < 1 ?
+                            `${(fenceDist * 1000).toFixed(0)}m` :
+                            `${fenceDist.toFixed(1)}km`;
+                    }
+                }
+
+                console.log(`🤖 Agent details - Name: "${agentName}", Speed: ${agentSpeed}km/h, Distance to fence: ${fenceDistanceText}, Zone: ${zoneText}, Position: ${agentPos.lat.toFixed(6)}, ${agentPos.lng.toFixed(6)}`);
+
+                agentDetailsDiv.innerHTML = `
+                    <div style="padding-left: 1rem; margin-bottom: 0.3rem; font-size: 11px; color: white;">
+                        <span style="font-weight: 500;">${agentName}</span>
+                        <span style="color: #95a5a6; margin: 0 0.5rem;">•</span>
+                        <span>${agentSpeed}km/h</span>
+                        <span style="color: #95a5a6; margin: 0 0.5rem;">•</span>
+                        <span>${zoneText}</span>
+                        <span style="color: #95a5a6; margin: 0 0.5rem;">•</span>
+                        <span>${fenceDistanceText}</span>
+                    </div>
+                `;
+            } else {
+                if (agentDetailsDiv) {
+                    console.log('🔍 Agent not ready - agentMarker:', !!agentMarker, 'virtualAgent:', !!virtualAgent);
+                    agentDetailsDiv.innerHTML = `
+                        <div style="padding-left: 1rem; margin-bottom: 0.3rem; font-size: 11px; color: #95a5a6;">
+                            <span class="status-indicator disconnected"></span>
+                            <span>Waiting for agent to connect...</span>
+                        </div>
+                    `;
+                }
+            }
+
+            // Update cow details
+            const cowDetailsDiv = document.getElementById('cowDetails');
+            if (cowDetailsDiv && recoverySession && recoverySession.cows && recoverySession.cows.length > 0) {
+                let html = '';
+
+                recoverySession.cows.forEach(cow => {
+                    const cowName = cow.cow_name || cow.cow_nickname || cow.collar_id || 'Unknown';
+                    const zoneText = cow.state_fence === 'zone1' ? 'Zone1' :
+                                    cow.state_fence === 'zone2' ? 'Zone2' :
+                                    cow.state_fence === 'zone3' ? 'Zone3' : 'Unknown';
+                    const zoneColor = cow.state_fence === 'zone2' ? '#f59e0b' :
+                                     cow.state_fence === 'zone3' ? '#ef4444' : '#10b981';
+
+                    // Calculate distance from agent to cow
+                    let distanceText = '-';
+                    if (agentMarker && cow.gps_latitude && cow.gps_longitude) {
+                        const agentPos = agentMarker.getLatLng();
+                        const distance = calculateDistanceInKm(
+                            agentPos.lat, agentPos.lng,
+                            cow.gps_latitude, cow.gps_longitude
+                        );
+                        distanceText = distance < 1 ?
+                            `${(distance * 1000).toFixed(0)}m` :
+                            `${distance.toFixed(1)}km`;
+                    }
+
+                    console.log(`🐄 Cow details - Name: "${cowName}", Position: ${cow.gps_latitude.toFixed(6)}, ${cow.gps_longitude.toFixed(6)}, Distance to agent: ${distanceText}, Zone: ${zoneText}`);
+
+                    html += `
+                        <div style="padding-left: 1rem; margin-bottom: 0.3rem; font-size: 11px; color: white;">
+                            <span style="font-weight: 500;">${cowName}</span>
+                            <span style="color: #95a5a6; margin: 0 0.5rem;">•</span>
+                            <span>${distanceText}</span>
+                            <span style="color: #95a5a6; margin: 0 0.5rem;">•</span>
+                            <span style="color: ${zoneColor};">${zoneText}</span>
+                        </div>
+                    `;
+                });
+
+                cowDetailsDiv.innerHTML = html;
+            } else if (cowDetailsDiv) {
+                cowDetailsDiv.innerHTML = `
+                    <div style="padding-left: 1rem; margin-bottom: 0.3rem; font-size: 11px; color: #95a5a6;">
+                        No cows in recovery
+                    </div>
+                `;
+            }
+        }
+
+        // ============================================
+        // AUTO-DISCONNECT CHECKER
+        // ============================================
+
+        function startAutoDisconnectChecker() {
+            setInterval(() => {
+                if (!recoverySession || !recoverySession.cows) return;
+
+                const allInside = recoverySession.cows.every(cow => cow.state_fence === 'zone1');
+
+                if (allInside && !autoDisconnectTimer) {
+                    console.log('All cows inside fence - starting 5 second countdown');
+                    autoDisconnectTimer = setTimeout(() => {
+                        disconnectRecovery();
+                    }, 5000);
+                } else if (!allInside && autoDisconnectTimer) {
+                    // Cancel auto-disconnect if a cow goes outside again
+                    clearTimeout(autoDisconnectTimer);
+                    autoDisconnectTimer = null;
+                }
+            }, 1000);
+        }
+
+        function disconnectRecovery() {
+            console.log('Auto-disconnecting recovery - all cows returned');
+            showCompletionScreen();
+
+            // Clean up
+            if (socket) {
+                socket.disconnect();
+            }
+            if (detailsUpdateInterval) {
+                clearInterval(detailsUpdateInterval);
+            }
+
+            // DEBUG: Disabled auto-close to see console logs
+            // Close window after 3 seconds
+            // setTimeout(() => {
+            //     window.close();
+            // }, 3000);
+            console.log('⚠️ Auto-close disabled for debugging. Page will stay open.');
+        }
+
+        // ============================================
+        // WEBSOCKET
+        // ============================================
+
+        function initializeWebSocket() {
+            console.log('\n🔌 [Page18] INITIALIZING SOCKET.IO');
+            console.log('Origin:', window.location.origin);
+
+            socket = io(window.location.origin);
+
+            socket.on('connect', () => {
+                console.log('✅ [Page18] SOCKET.IO CONNECTED!');
+                console.log('Socket ID:', socket.id);
+                console.log('Connected:', socket.connected);
+
+                // Join recovery room
+                const joinData = {
+                    recoveryId: recoverySession.recovery_id
+                };
+                console.log('📡 Joining recovery room:', joinData);
+                socket.emit('join-recovery', joinData);
+                console.log('✅ Join room event emitted');
+            });
+
+            socket.on('disconnect', () => {
+                console.log('❌ [Page18] SOCKET.IO DISCONNECTED');
+            });
+
+            socket.on('connect_error', (error) => {
+                console.error('❌ [Page18] SOCKET.IO CONNECTION ERROR:', error);
+            });
+
+            // Listen for agent position updates
+            socket.on('recovery:agent-position-update', (data) => {
+                if (data.recoveryId === recoverySession.recovery_id) {
+                    updateAgentMarker(data.latitude, data.longitude);
+                }
+            });
+
+            // Listen for cow position updates
+            socket.on('recovery:cow-position-update', (data) => {
+                if (data.recoveryId === recoverySession.recovery_id) {
+                    // Update cow data
+                    const cow = recoverySession.cows.find(c => c.cow_token === data.cowToken);
+                    if (cow) {
+                        cow.gps_latitude = data.latitude;
+                        cow.gps_longitude = data.longitude;
+                        cow.state_fence = data.zone;
+
+                        updateCowMarkers();
+                    }
+                }
+            });
+
+            // Listen for recovery cancelled
+            socket.on('recovery:cancelled', (data) => {
+                if (data.recoveryId === recoverySession.recovery_id) {
+                    showCancelledScreen();
+
+                    if (detailsUpdateInterval) {
+                        clearInterval(detailsUpdateInterval);
+                    }
+                }
+            });
+
+            // Listen for recovery completed
+            socket.on('recovery:completed', (data) => {
+                if (data.recoveryId === recoverySession.recovery_id) {
+                    showCompletionScreen();
+
+                    if (detailsUpdateInterval) {
+                        clearInterval(detailsUpdateInterval);
+                    }
+                }
+            });
+
+            // If agent, send position updates
+            if (!isOwner) {
+                startAgentLocationTracking();
+            }
+        }
+
+        function startAgentLocationTracking() {
+            if (!navigator.geolocation) {
+                console.error('Geolocation not supported');
+                return;
+            }
+
+            setInterval(() => {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    socket.emit('recovery:agent-position', {
+                        recoveryId: recoverySession.recovery_id,
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    });
+                }, (error) => {
+                    console.error('Error getting agent location:', error);
+                });
+            }, 5000); // Send position every 5 seconds
+        }
+
+        // ============================================
+        // AUTO FOCUS FUNCTIONS
+        // ============================================
+
+        function autoFocusFence() {
+            if (!recoveryMap || !fencePolygons || fencePolygons.length === 0) {
+                console.warn('No fences to focus on');
+                return;
+            }
+
+            // Set mode to fence (user manually selected)
+            autoFocusMode = 'fence';
+
+            const bounds = L.latLngBounds([]);
+            fencePolygons.forEach(fence => {
+                bounds.extend(fence.getBounds());
+            });
+
+            recoveryMap.fitBounds(bounds, { padding: [50, 50] });
+            console.log('Auto-focus mode: fence');
+        }
+
+        function autoFocusAll() {
+            if (!recoveryMap) {
+                console.warn('Map not initialized');
+                return;
+            }
+
+            // Set mode to all (user manually selected or auto-triggered)
+            autoFocusMode = 'all';
+
+            const bounds = L.latLngBounds([]);
+            let hasItems = false;
+
+            // Add fences to bounds
+            if (fencePolygons && fencePolygons.length > 0) {
+                fencePolygons.forEach(fence => {
+                    bounds.extend(fence.getBounds());
+                    hasItems = true;
+                });
+            }
+
+            // Add cow markers to bounds
+            if (cowMarkers && Object.keys(cowMarkers).length > 0) {
+                Object.values(cowMarkers).forEach(marker => {
+                    bounds.extend(marker.getLatLng());
+                    hasItems = true;
+                });
+            }
+
+            // Add agent marker to bounds
+            if (agentMarker) {
+                bounds.extend(agentMarker.getLatLng());
+                hasItems = true;
+            }
+
+            if (hasItems && bounds.isValid()) {
+                // Dynamic padding based on bounds size (zoom adapts)
+                recoveryMap.fitBounds(bounds, {
+                    padding: [50, 50],
+                    maxZoom: 18  // Prevent over-zooming when elements are very close
+                });
+                console.log('Auto-focus mode: all');
+            } else {
+                console.warn('No items to focus on');
+            }
+        }
+
+        function centerOnAgent() {
+            if (!recoveryMap || !agentMarker) {
+                console.warn('Agent not available');
+                return;
+            }
+
+            // Set mode to agent (user manually selected)
+            autoFocusMode = 'agent';
+
+            const agentPos = agentMarker.getLatLng();
+            recoveryMap.setView([agentPos.lat, agentPos.lng], 16);
+            agentMarker.openPopup();
+            console.log('Auto-focus mode: agent');
+        }
+
+        // ============================================
+        // AGENT SPEED CONTROLS
+        // ============================================
+
+        function increaseAgentSpeed() {
+            if (!virtualAgent) {
+                console.warn('Virtual agent not initialized');
+                return;
+            }
+
+            // Increase speed by 5 km/h, max 300 km/h
+            RECOVERY_CONFIG.agentSpeed = Math.min(RECOVERY_CONFIG.agentSpeed + 5, 300);
+            virtualAgent.speed = RECOVERY_CONFIG.agentSpeed;
+            updateSpeedDisplay();
+            console.log(`🔼 Agent speed increased to ${RECOVERY_CONFIG.agentSpeed} km/h`);
+        }
+
+        function decreaseAgentSpeed() {
+            if (!virtualAgent) {
+                console.warn('Virtual agent not initialized');
+                return;
+            }
+
+            // Decrease speed by 5 km/h, min 5 km/h
+            RECOVERY_CONFIG.agentSpeed = Math.max(RECOVERY_CONFIG.agentSpeed - 5, 5);
+            virtualAgent.speed = RECOVERY_CONFIG.agentSpeed;
+            updateSpeedDisplay();
+            console.log(`🔽 Agent speed decreased to ${RECOVERY_CONFIG.agentSpeed} km/h`);
+        }
+
+        function updateSpeedDisplay() {
+            const speedDisplay = document.getElementById('speedDisplay');
+            if (speedDisplay) {
+                speedDisplay.textContent = `${RECOVERY_CONFIG.agentSpeed}km/h`;
+            }
+        }
+
+        // ============================================
+        // OWNER ACTIONS
+        // ============================================
+
+        async function shareRecoveryLink() {
+            if (!isOwner || !recoverySession) return;
+
+            try {
+                const response = await fetch(`${virtualApiBase}/recovery/${recoverySession.recovery_id}/share-link`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${virtualAuthToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    alert('Failed to generate share link');
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Copy to clipboard
+                await navigator.clipboard.writeText(data.shareLink);
+
+                alert(`Recovery link copied to clipboard!\n\nCode: ${data.recoveryCode}\nLink: ${data.shareLink}`);
+
+            } catch (error) {
+                console.error('Error sharing recovery link:', error);
+                alert('Failed to share recovery link');
+            }
+        }
+
+        async function cancelRecovery() {
+            if (!isOwner || !recoverySession) return;
+
+            if (!confirm('Are you sure you want to cancel this recovery?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${virtualApiBase}/recovery/${recoverySession.recovery_id}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${virtualAuthToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    alert('Failed to cancel recovery');
+                    return;
+                }
+
+                // Broadcast cancellation via WebSocket
+                if (socket) {
+                    socket.emit('recovery:cancel', {
+                        recoveryId: recoverySession.recovery_id
+                    });
+                }
+
+                showCancelledScreen();
+
+                // Clean up
+                if (detailsUpdateInterval) {
+                    clearInterval(detailsUpdateInterval);
+                }
+
+            } catch (error) {
+                console.error('Error cancelling recovery:', error);
+                alert('Failed to cancel recovery');
+            }
+        }
+    </script>
+</body>
+</html>
